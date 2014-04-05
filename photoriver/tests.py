@@ -20,10 +20,10 @@ class ReceiverTest(TestCase):
         self.receiver = FolderReceiver("test_folder/")
     
     def tearDown(self):
-        rmtree("test_folder/")
+        rmtree("test_folder", ignore_errors=True)
     
     def test_nodata(self):
-        rmtree("test_folder/")
+        rmtree("test_folder")
         self.assertEqual(self.receiver.get_list(), {})
         self.assertFalse(self.receiver.is_available())
         mkdir("test_folder")
@@ -90,7 +90,7 @@ class UploaderTest(TestCase):
         self.uploader = FolderUploader("upload_folder/")
     
     def tearDown(self):
-        rmtree("upload_folder/")
+        rmtree("upload_folder", ignore_errors=True)
     
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG")
@@ -106,8 +106,8 @@ class UploaderTest(TestCase):
         
 class IntegrationTest(TestCase):
     def tearDown(self):
-        rmtree("test_folder/")
-        rmtree("upload_folder/")
+        rmtree("test_folder", ignore_errors=True)
+        rmtree("upload_folder", ignore_errors=True)
 
     def test_basic_pipeline(self):        
         mkdir("test_folder")

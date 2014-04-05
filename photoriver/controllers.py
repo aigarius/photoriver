@@ -1,4 +1,5 @@
 #!python
 
 class BasicController:
-    pass
+    def __init__(*args, **kwargs):
+        pass
