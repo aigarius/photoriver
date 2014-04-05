@@ -1,0 +1,4 @@
+#!python
+
+class FolderReceiver:
+    pass

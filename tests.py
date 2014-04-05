@@ -11,7 +11,7 @@ from photoriver.uploaders import FolderUploader
 
 class BasicTest(TestCase):
     def basic_test(self):
-        self.assertTrue(2+2=4)
+        self.assertTrue(2+2==4)
 
 
 class ReceiverTest(TestCase):
@@ -31,7 +31,7 @@ class ReceiverTest(TestCase):
         self.assertTrue(self.receiver.is_available())
     
     def test_add_file(self):
-        with open("test_folder/IMG_123.JPG", "w") as f
+        with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
         
         self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
@@ -41,14 +41,14 @@ class ReceiverTest(TestCase):
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
     
     def test_add_file_offline(self):
-        with open("test_folder/IMG_123.JPG", "w") as f
+        with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
         
         self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
         rename("test_folder", "other_folder")
         self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
 
-        with open("other_folder/IMG_124.JPG", "w") as f
+        with open("other_folder/IMG_124.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER 2")
 
         rename("other_folder", "test_folder")
@@ -113,7 +113,7 @@ class IntegrationTest(TestCase):
         mkdir("test_folder")
         receiver = FolderReceiver("test_folder/")
         uploader = FolderUploader("upload_folder/")
-        with open("test_folder/IMG_123.JPG", "w") as f
+        with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
                 
         controller = BasicController(receiver=receiver, uploader=uploader)
