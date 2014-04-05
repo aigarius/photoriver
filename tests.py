@@ -6,7 +6,8 @@ from unittest import TestCase
 from mock import Mock
 
 from photoriver.receivers import FolderReceiver
-from photoriver import Controller
+from photoriver.controllers import BasicController
+from photoriver.uploaders import FolderUploader
 
 class BasicTest(TestCase):
     def basic_test(self):
@@ -59,7 +60,7 @@ class ControllerTest(TestCase):
         self.filter1 = Mock()
         self.filter2 = Mock()
         self.uploader = Mock()
-        self.controller = Controller(receiver=self.receiver, filters=[self.filter1, self.filter2], uploaders=[self.uploader])
+        self.controller = BasicController(receiver=self.receiver, filters=[self.filter1, self.filter2], uploaders=[self.uploader])
     
     def test_nodata(self):
         self.receiver.get_list.return_value = {}
@@ -84,9 +85,43 @@ class ControllerTest(TestCase):
         self.uploader.upload.assert_called_once_with(third_mock)
         
         
+class UploaderTest(TestCase):        
+    def setUp(self):
+        self.uploader = FolderUploader("upload_folder/")
+    
+    def tearDown(self):
+        rmtree("upload_folder/")
+    
+    def test_upload(self):
+        photo_obj = Mock(file_name="IMG_123.JPG")
+        photo_file = Mock()
+        photo_obj.open_file.return_value = photo_file
+        photo_file.read.return_value = "JPEG DUMMY TEST DATA"
         
+        self.uploader.upload(photo_obj)
         
+        self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
+        data = open("upload_folder/IMG_123.JPG").read()
+        self.assertEqual(data, "JPEG DUMMY TEST DATA")
         
+class IntegrationTest(TestCase):
+    def tearDown(self):
+        rmtree("test_folder/")
+        rmtree("upload_folder/")
+
+    def test_basic_pipeline(self):        
+        mkdir("test_folder")
+        receiver = FolderReceiver("test_folder/")
+        uploader = FolderUploader("upload_folder/")
+        with open("test_folder/IMG_123.JPG", "w") as f
+            f.write("DUMMY JPEG FILE HEADER")
+                
+        controller = BasicController(receiver=receiver, uploader=uploader)
+        self.controller.process_all()
+
+        self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
+        data = open("upload_folder/IMG_123.JPG").read()
+        self.assertEqual(data, "DUMMY JPEG FILE HEADER")
         
         
         
