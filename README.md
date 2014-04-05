@@ -1,6 +1,8 @@
 photoriver
 ==========
 
+[![Coverage Status](https://coveralls.io/repos/aigarius/photoriver/badge.png)](https://coveralls.io/r/aigarius/photoriver)
+
 System for streamlinging photographic process with networked cameras. Deep ToDo country so far :)
 
 
