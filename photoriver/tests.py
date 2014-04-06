@@ -1,9 +1,12 @@
 #!python
 
-from os import mkdir
+import os.path
+
+from os import mkdir, rename
 from shutil import rmtree
 from unittest import TestCase
 from mock import Mock
+from StringIO import StringIO
 
 from photoriver.receivers import FolderReceiver
 from photoriver.controllers import BasicController
@@ -70,19 +73,22 @@ class ControllerTest(TestCase):
         self.receiver.get_list.assert_called_once_with()
         
     def test_basic_filtration(self):
-        first_mock = Mock(file_name="IMG_123.JPG")
-        second_mock = Mock(file_name="IMG_123.JPG", gps_data="something")
-        third_mock = Mock(file_name="IMG_123.JPG", gps_data="something", title="Dude!")
-        self.receiver.get_list.return_value = {'IMG_123.JPG': first_mock}
+        mock1 = Mock(file_name="IMG_123.JPG")
+        mock2 = Mock(file_name="IMG_123.JPG", _cached=True)
+        mock3 = Mock(file_name="IMG_123.JPG", _cached=True, gps_data="something")
+        mock4 = Mock(file_name="IMG_123.JPG", _cached=True, gps_data="something", title="Dude!")
+        self.receiver.get_list.return_value = {'IMG_123.JPG': mock1}
         self.receiver.is_available.return_value = True
-        self.filter1.filter.return_value = second_mock
-        self.filter2.filter.return_value = third_mock
+        self.receiver.download_file.return_value = mock2
+        self.filter1.filter.return_value = mock3
+        self.filter2.filter.return_value = mock4
         
         self.controller.process_all()
         
-        self.filter1.filter.assert_called_once_with(first_mock)
-        self.filter2.filter.assert_called_once_with(second_mock)
-        self.uploader.upload.assert_called_once_with(third_mock)
+        self.receiver.download_file.assert_called_once_with("IMG_123.JPG")
+        self.filter1.filter.assert_called_once_with(mock2)
+        self.filter2.filter.assert_called_once_with(mock3)
+        self.uploader.upload.assert_called_once_with(mock4)
         
         
 class UploaderTest(TestCase):        
@@ -94,9 +100,8 @@ class UploaderTest(TestCase):
     
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG")
-        photo_file = Mock()
+        photo_file = StringIO("JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
-        photo_file.read.return_value = "JPEG DUMMY TEST DATA"
         
         self.uploader.upload(photo_obj)
         
@@ -116,8 +121,8 @@ class IntegrationTest(TestCase):
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
                 
-        controller = BasicController(receiver=receiver, uploader=uploader)
-        self.controller.process_all()
+        controller = BasicController(receiver=receiver, uploaders=[uploader])
+        controller.process_all()
 
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         data = open("upload_folder/IMG_123.JPG").read()
