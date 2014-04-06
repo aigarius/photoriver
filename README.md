@@ -2,7 +2,7 @@ photoriver
 ==========
 
 [![Build Status](https://travis-ci.org/aigarius/photoriver.svg?branch=master)](https://travis-ci.org/aigarius/photoriver)
-[![Coverage Status](https://coveralls.io/repos/aigarius/photoriver/badge.png)](https://coveralls.io/r/aigarius/photoriver)
+[![Coverage Status](https://coveralls.io/repos/aigarius/photoriver/badge.png?branch=master)](https://coveralls.io/r/aigarius/photoriver?branch=master)
 
 System for streamlinging photographic process with networked cameras. Deep ToDo country so far :)
 
