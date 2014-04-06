@@ -29,4 +29,5 @@ setup(name="photoriver",
           "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
       ],
       install_requires=["mock", "nose", "requests"],
-      test_suite="photoriver.tests")
+      test_suite="photoriver.tests",
+      )

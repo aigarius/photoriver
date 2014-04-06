@@ -11,7 +11,7 @@ class BasicController(object):
     def process_all(self):
         photos = self.receiver.get_list()
         
-        for file_name, photo in photos.iteritems():
+        for file_name, photo in photos.items():
             if file_name not in self._processed:
                 photo = self.receiver.download_file(file_name)
                 for afilter in self.filters:

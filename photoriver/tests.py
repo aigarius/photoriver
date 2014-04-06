@@ -6,7 +6,7 @@ from os import mkdir, rename
 from shutil import rmtree
 from unittest import TestCase
 from mock import Mock
-from StringIO import StringIO
+from io import StringIO
 
 from photoriver.receivers import FolderReceiver
 from photoriver.controllers import BasicController
@@ -37,9 +37,10 @@ class ReceiverTest(TestCase):
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
         
-        self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
+        self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         cached_file = self.receiver.download_file('IMG_123.JPG')
-        data = cached_file.open_file().read()
+        with cached_file.open_file() as f:
+            data = f.read()
         
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
     
@@ -47,15 +48,15 @@ class ReceiverTest(TestCase):
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
         
-        self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
+        self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         rename("test_folder", "other_folder")
-        self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG'])
+        self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
 
         with open("other_folder/IMG_124.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER 2")
 
         rename("other_folder", "test_folder")
-        self.assertEqual(self.receiver.get_list().keys(), ['IMG_123.JPG', 'IMG_124.JPG'])
+        self.assertEqual(sorted(self.receiver.get_list().keys()), ['IMG_123.JPG', 'IMG_124.JPG'])
 
 class ControllerTest(TestCase):
     def setUp(self):
@@ -100,13 +101,14 @@ class UploaderTest(TestCase):
     
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG")
-        photo_file = StringIO("JPEG DUMMY TEST DATA")
+        photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
         
         self.uploader.upload(photo_obj)
         
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
-        data = open("upload_folder/IMG_123.JPG").read()
+        with open("upload_folder/IMG_123.JPG") as f:
+            data = f.read()
         self.assertEqual(data, "JPEG DUMMY TEST DATA")
         
 class IntegrationTest(TestCase):
@@ -125,7 +127,8 @@ class IntegrationTest(TestCase):
         controller.process_all()
 
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
-        data = open("upload_folder/IMG_123.JPG").read()
+        with open("upload_folder/IMG_123.JPG") as f:
+            data = f.read()
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
         
         

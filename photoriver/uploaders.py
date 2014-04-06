@@ -11,4 +11,5 @@ class FolderUploader(object):
 
     def upload(self, photo):
         with open(os.path.join(self.destination, photo.file_name), "w") as dst:
-            shutil.copyfileobj(photo.open_file(), dst)
+            with photo.open_file() as src:
+                shutil.copyfileobj(src, dst)
