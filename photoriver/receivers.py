@@ -72,15 +72,18 @@ class FlashAirReceiver(BaseReceiver):
     
     def get_list(self):
         try:
-            r = requests.get(self.source + "command.cgi?op=100&dir=/DCIM", timeout=self.timeout)
+            r = requests.get(self.source + "command.cgi?op=100&DIR=/DCIM/102CANON", timeout=self.timeout)
             if r.status_code != 200:
                 return self._files
             lines = r.text.split("\n")
-            if lines[0] != "WLANSD_FILELIST":
+            if lines[0].strip() != "WLANSD_FILELIST":
                 return self._files
                 
             files = {}
             for line in lines[1:]:
+                if not line:
+                    continue
+
                 dirname, filename, size, attribute, adate, atime = line.split(',')
                 adate = int(adate)
                 atime = int(atime)

@@ -10,6 +10,9 @@ class Photo(object):
         self._downloaded = False
         self.enabled = True
     
+    def __repr__(self):
+        return "Photo({}/{})".format(self.dirname, self.file_name)
+    
     def open_file(self):
         if self._downloaded:
             return open(self._cached_file)

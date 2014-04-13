@@ -26,6 +26,7 @@ class ReceiverTest(TestCase):
     
     def tearDown(self):
         rmtree("test_folder", ignore_errors=True)
+        rmtree(".cache", ignore_errors=True)
     
     def test_nodata(self):
         rmtree("test_folder")
@@ -78,13 +79,15 @@ class FlashAirReceiverTest(TestCase):
     def callback(self, method, uri, headers):
         if uri == "http://192.168.34.72/command.cgi?op=120":
             return (200, headers, "02544d535730384708c00b78700d201")
-        if uri == "http://192.168.34.72/command.cgi?op=100&dir=/DCIM":
+        if uri == "http://192.168.34.72/command.cgi?op=100&DIR=/DCIM/102CANON":
             lines = ["WLANSD_FILELIST"]
             lines += [",".join(("/DCIM", x, str(y['size']), str(32), str(y['adate']), str(y['atime']))) for x, y in self.files.items()]
+            lines += ['']
             text = "\n".join(lines)
             return (200, headers, text)
 
     def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
         httpretty.disable()  # disable afterwards, so that you will have no problems in code that uses that socket module
         httpretty.reset()    # reset HTTPretty state (clean up registered urls and request history)
 
@@ -167,6 +170,9 @@ class ControllerTest(TestCase):
         self.filter2 = Mock()
         self.uploader = Mock()
         self.controller = BasicController(receiver=self.receiver, filters=[self.filter1, self.filter2], uploaders=[self.uploader])
+
+    def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
     
     def test_nodata(self):
         self.receiver.get_list.return_value = {}
@@ -199,6 +205,7 @@ class UploaderTest(TestCase):
         self.uploader = FolderUploader("upload_folder/")
     
     def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
         rmtree("upload_folder", ignore_errors=True)
     
     def test_upload(self):
@@ -215,6 +222,7 @@ class UploaderTest(TestCase):
         
 class IntegrationTest(TestCase):
     def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
         rmtree("test_folder", ignore_errors=True)
         rmtree("upload_folder", ignore_errors=True)
 
