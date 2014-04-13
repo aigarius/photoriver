@@ -101,7 +101,7 @@ class FlashAirReceiverTest(TestCase):
         }
         
         file_list = self.receiver.get_list()
-        self.assertEqual(file_list.keys(), ["IMG_123.JPG", "IMG_124.JPG"])
+        self.assertEqual(list(file_list.keys()), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
     
