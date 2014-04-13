@@ -16,16 +16,8 @@ class BaseReceiver(object):
         self._cache_dir = '.cache'
         if not os.path.exists(self._cache_dir):
             os.mkdir(self._cache_dir)
-    
-    def is_available(self):
-        raise NotImplementedError
-    
-    def get_list(self):
-        raise NotImplementedError
-    
-    def download_file(self, name):
-        raise NotImplementedError
 
+    
 class FolderReceiver(BaseReceiver):
     def __init__(self, source):
         super(FolderReceiver, self).__init__(source)
@@ -53,6 +45,7 @@ class FolderReceiver(BaseReceiver):
         photo._cached_file = os.path.join(self._cache_dir, name)
         return photo
 
+
 class FlashAirReceiver(BaseReceiver):
     def __init__(self, url, cid=None, timeout=5):
         super(FlashAirReceiver, self).__init__(source=url)
@@ -78,29 +71,32 @@ class FlashAirReceiver(BaseReceiver):
             return False
     
     def get_list(self):
-        r = requests.get(self.source + "command.cgi?op=100&dir=/DCIM", timeout=self.timeout)
-        if r.status_code != 200:
-            return self._files
-        lines = r.text.split("\n")
-        if lines[0] != "WLANSD_FILELIST":
-            return self._files
+        try:
+            r = requests.get(self.source + "command.cgi?op=100&dir=/DCIM", timeout=self.timeout)
+            if r.status_code != 200:
+                return self._files
+            lines = r.text.split("\n")
+            if lines[0] != "WLANSD_FILELIST":
+                return self._files
+                
+            files = {}
+            for line in lines[1:]:
+                dirname, filename, size, attribute, adate, atime = line.split(',')
+                adate = int(adate)
+                atime = int(atime)
+                timestamp = datetime(
+                    ((adate&(0x3F<<9))>>9)+1980, 
+                    ((adate&(0x0F<<5))>>5), 
+                    adate&(0x1F), 
+                    ((atime&(0x1F<<11))>>11), 
+                    ((atime&(0x3F<<5))>>5), 
+                    (atime&(0x1F))*2
+                )
+                files[filename] = Photo(filename, dirname=dirname, size=size, timestamp=timestamp)
             
-        files = {}
-        for line in lines[1:]:
-            dirname, filename, size, attribute, adate, atime = line.split(',')
-            adate = int(adate)
-            atime = int(atime)
-            timestamp = datetime(
-                ((adate&(0x3F<<9))>>9)+1980, 
-                ((adate&(0x0F<<5))>>5), 
-                adate&(0x1F), 
-                ((atime&(0x1F<<11))>>11), 
-                ((atime&(0x3F<<5))>>5), 
-                (atime&(0x1F))*2
-            )
-            files[filename] = Photo(filename, dirname=dirname, size=size, timestamp=timestamp)
-        
-        self._files = files
+            self._files = files
+        except:
+            pass
         return self._files
 
     def download_file(self, name):

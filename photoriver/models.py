@@ -14,4 +14,4 @@ class Photo(object):
         if self._downloaded:
             return open(self._cached_file)
         else:
-            return False
+            return None

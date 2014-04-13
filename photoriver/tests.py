@@ -15,7 +15,7 @@ from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader
 
 class BasicTest(TestCase):
-    def basic_test(self):
+    def test_reality(self):
         self.assertTrue(2+2==4)
 
 
@@ -45,6 +45,11 @@ class ReceiverTest(TestCase):
             data = f.read()
         
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
+        cached_file = self.receiver.download_file('IMG_123.JPG')
+        with cached_file.open_file() as f:
+            data = f.read()
+        
+        self.assertEqual(data, "DUMMY JPEG FILE HEADER")
     
     def test_add_file_offline(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
@@ -68,7 +73,7 @@ class FlashAirReceiverTest(TestCase):
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
                                body=self.callback)
         
-        self.receiver = FlashAirReceiver(url="http://192.168.34.72/")
+        self.receiver = FlashAirReceiver(url="http://192.168.34.72/", timeout=0.01)
        
     def callback(self, method, uri, headers):
         if uri == "http://192.168.34.72/command.cgi?op=120":
@@ -86,7 +91,6 @@ class FlashAirReceiverTest(TestCase):
     def test_availability(self):
         self.assertTrue(self.receiver.is_available())
         self.assertTrue(self.receiver.is_available())
-        self.receiver = FlashAirReceiver(url="http://192.168.34.72/", timeout=0.01)
         httpretty.disable()
         self.assertFalse(self.receiver.is_available())
         httpretty.enable()
@@ -101,9 +105,32 @@ class FlashAirReceiverTest(TestCase):
         }
         
         file_list = self.receiver.get_list()
-        self.assertEqual(list(file_list.keys()), ["IMG_123.JPG", "IMG_124.JPG"])
+        self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
+        
+        httpretty.disable()
+        file_list = self.receiver.get_list()
+        self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
+        self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
+        self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
+        httpretty.enable()
+    
+    def test_file_list_errors(self):
+        self.files = {
+            "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
+            "IMG_124.JPG": {"size": 125, "adate": 17071, "atime": 28041},
+        }
+        file_list = self.receiver.get_list()
+        self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body="Bad data")
+        self.assertEqual(self.receiver.get_list(), file_list)
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body="WLANSD_FILELIST", status=404)
+        self.assertEqual(self.receiver.get_list(), file_list)
+        
+    
     
     def test_download(self):
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_123.JPG",
@@ -116,6 +143,14 @@ class FlashAirReceiverTest(TestCase):
         }
         
         file_list = self.receiver.get_list()
+        
+        self.assertEqual(self.receiver._files['IMG_123.JPG'].open_file(), None)
+        
+        cached_file = self.receiver.download_file('IMG_123.JPG')
+        with cached_file.open_file() as f:
+            data = f.read()
+        
+        self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
