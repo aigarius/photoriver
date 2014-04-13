@@ -1,5 +1,6 @@
 #!python
 
+import httpretty
 import os.path
 
 from os import mkdir, rename
@@ -8,7 +9,7 @@ from unittest import TestCase
 from mock import Mock
 from io import StringIO
 
-from photoriver.receivers import FolderReceiver
+from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader
 
@@ -57,6 +58,29 @@ class ReceiverTest(TestCase):
 
         rename("other_folder", "test_folder")
         self.assertEqual(sorted(self.receiver.get_list().keys()), ['IMG_123.JPG', 'IMG_124.JPG'])
+
+
+class FlashAirReceiverTest(TestCase):
+    def setUp(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi?op=120",
+                               body="02544d535730384708c00b78700d201")
+        
+        self.receiver = FlashAirReceiver(url="http://192.168.34.72/")
+
+    def tearDown(self):
+        httpretty.disable()  # disable afterwards, so that you will have no problems in code that uses that socket module
+        httpretty.reset()    # reset HTTPretty state (clean up registered urls and request history)
+
+    def test_availability(self):
+        self.assertTrue(self.receiver.is_available())
+        self.assertTrue(self.receiver.is_available())
+        self.receiver = FlashAirReceiver(url="http://192.168.34.72/", timeout=0.01)
+        httpretty.disable()
+        self.assertFalse(self.receiver.is_available())
+        httpretty.enable()
+        self.assertTrue(self.receiver.is_available())
+        
 
 class ControllerTest(TestCase):
     def setUp(self):

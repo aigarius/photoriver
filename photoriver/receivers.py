@@ -3,6 +3,7 @@
 import os
 import os.path
 import shutil
+import requests
 
 from photoriver.models import Photo
 
@@ -50,3 +51,27 @@ class FolderReceiver(BaseReceiver):
         photo._cached_file = os.path.join(self._cache_dir, name)
         return photo
 
+class FlashAirReceiver(BaseReceiver):
+    def __init__(self, url, cid=None, timeout=5):
+        super(FlashAirReceiver, self).__init__(source=url)
+        self.cid = cid
+        self.timeout = timeout
+
+    def is_available(self):
+        cid = None
+        try:
+            r = requests.get(self.source + "command.cgi?op=120", timeout=self.timeout)
+            if r.status_code == 200:
+                cid = r.text
+        except:
+            pass
+        
+        if cid:
+            if self.cid:
+                return cid == self.cid
+            else:
+                self.cid = cid
+                return True
+        else:
+            return False
+    
