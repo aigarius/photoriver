@@ -2,6 +2,7 @@
 
 import httpretty
 import os.path
+import flickrapi
 
 from os import mkdir, rename
 from shutil import rmtree
@@ -9,10 +10,11 @@ from unittest import TestCase
 from mock import Mock
 from io import StringIO
 from datetime import datetime
+from xml.etree import ElementTree
 
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
-from photoriver.uploaders import FolderUploader
+from photoriver.uploaders import FolderUploader, FlickrUploader
 
 class BasicTest(TestCase):
     def test_reality(self):
@@ -220,7 +222,65 @@ class UploaderTest(TestCase):
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
         self.assertEqual(data, "JPEG DUMMY TEST DATA")
+
+class MockFlickrAPI(Mock):
+    _called={}
+
+    def get_token_part_one(self, perms):
+        return ("token", "frob")
+
+    def get_token_part_two(self, tokens):
+        return
+    
+    def upload(self, filename, title="123"):
+        self._called['upload'] = filename
+        return ElementTree.fromstring('<rsp stat="ok">\n<photoid>13827599313</photoid>\n</rsp>')
+    
+    def photosets_create(self, name, primary_photo_id):
+        self._called['created.name'] = name
+        self._called['created.primary_photo_id'] = primary_photo_id
+        return ElementTree.fromstring('<rsp stat="ok">\n<photoset id="72157643905570745" url="http://www.flickr.com/photos/aigarius/sets/72157643905570745/" />\n</rsp>')
+     
+    def photosets_getList(self):
+        string = """<rsp stat="ok">
+<photosets cancreate="1" page="1" pages="1" perpage="42" total="42">
+	<photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" needs_interstitial="0" photos="1" primary="13827599313" secret="aa00f81f9d" server="5164" videos="0" visibility_can_see_set="1">
+		<title>Test 123</title>
+		<description />
+	</photoset>
+	<photoset can_comment="1" count_comments="0" count_views="1" date_create="1395533894" date_update="1395533914" farm="4" id="72157642764389724" needs_interstitial="0" photos="308" primary="11910296655" secret="a3456ac147" server="3749" videos="1" visibility_can_see_set="1">
+		<title>nonset</title>
+		<description />
+	</photoset>
+	<photoset can_comment="1" count_comments="0" count_views="87" date_create="1392560704" date_update="1392560766" farm="8" id="72157641062521883" needs_interstitial="0" photos="1310" primary="12559920665" secret="e2b3b7879a" server="7289" videos="0" visibility_can_see_set="1">
+		<title>Hong Kong trip</title>
+		<description>with side trips to Tokyo and Macao</description>
+	</photoset>
+</photosets>
+</rsp>
+        """
+        return ElementTree.fromstring(string)
+
+class FlickrUploaderTest(TestCase):
+    def setUp(self):
+        flickrapi.FlickrAPI = MockFlickrAPI
+        self.uploader = FlickrUploader(set_name="Photoriver Test 123")
+    
+    def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
+    
+    def test_upload(self):
+        photo_obj = Mock(file_name="IMG_123.JPG", _cached_file=".cache/IMG_123.JPG")
+        photo_file = StringIO(u"JPEG DUMMY TEST DATA")
+        photo_obj.open_file.return_value = photo_file
         
+        self.uploader.upload(photo_obj)
+        
+        self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_123.JPG")
+        self.assertEqual(self.uploader.api._called['created.name'], "Photoriver Test 123")
+        self.assertEqual(self.uploader.api._called['created.primary_photo_id'], 13827599313)
+    
+
 class IntegrationTest(TestCase):
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)

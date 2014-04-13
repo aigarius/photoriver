@@ -6,6 +6,7 @@ class Photo(object):
         self.dirname = dirname
         self.size = size
         self.timestamp = timestamp
+        self.upload_id = None
         self._cached_file = None
         self._downloaded = False
         self.enabled = True

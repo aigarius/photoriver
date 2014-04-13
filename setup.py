@@ -29,5 +29,6 @@ setup(name="photoriver",
           "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
       ],
       install_requires=["mock", "nose", "requests", "HTTPretty"],
+      dependency_links=["http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi"],
       test_suite="photoriver.tests",
       )
