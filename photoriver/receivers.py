@@ -18,13 +18,13 @@ class BaseReceiver(object):
             os.mkdir(self._cache_dir)
     
     def is_available(self):
-        return False
+        raise NotImplementedError
     
     def get_list(self):
-        return {}
+        raise NotImplementedError
     
     def download_file(self, name):
-        return None
+        raise NotImplementedError
 
 class FolderReceiver(BaseReceiver):
     def __init__(self, source):
