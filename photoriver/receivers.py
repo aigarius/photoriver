@@ -4,10 +4,13 @@ import os
 import os.path
 import shutil
 import requests
+import logging
 
 from datetime import datetime
 
 from photoriver.models import Photo
+
+logger = logging.getLogger(__name__)
 
 class BaseReceiver(object):
     def __init__(self, source):
@@ -97,12 +100,16 @@ class FlashAirReceiver(BaseReceiver):
                 )
                 files[filename] = Photo(filename, dirname=dirname, size=size, timestamp=timestamp)
             
+            if files != self._files:
+                logger.info("New photos found on FlashAir: %s", set(files.keys())-set(self._files.keys()))
+            
             self._files = files
         except:
             pass
         return self._files
 
     def download_file(self, name):
+        logging.info("Downloading from FlashAir: %s", name)
         photo = self._files[name]
         if photo._downloaded:
             return photo
@@ -112,5 +119,6 @@ class FlashAirReceiver(BaseReceiver):
                 fd.write(chunk)
         photo._downloaded = True
         photo._cached_file = os.path.join(self._cache_dir, name)
+        logging.info("Done downloading: %s", name)
         return photo
 

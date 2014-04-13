@@ -4,6 +4,10 @@ import flickrapi
 import shutil
 import os.path
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class FolderUploader(object):
     def __init__(self, destination):
         self.destination = destination
@@ -17,14 +21,22 @@ class FolderUploader(object):
 
 class FlickrUploader(object):
     def __init__(self, set_name):
-        key = "26a60d41603c1949a189f898f67d3247"
-        secret = "3de835ffcefadd36"
+        key = u"26a60d41603c1949a189f898f67d3247"
+        secret = u"3de835ffcefadd36"
         self.api = flickrapi.FlickrAPI(key, secret)
-        (token, frob) = self.api.get_token_part_one(perms='write')
-        if not token:
-            raw_input('Press ENTER after you authorized this program')
-        self.api.get_token_part_two((token, frob))
-        
+        if not self.api.token_valid(perms=u'write'):
+            # Get a request token
+            self.api.get_request_token(oauth_callback='oob')
+            
+            authorize_url = self.api.auth_url(perms=u'write')
+            print("Open this URL to authorize: ", authorize_url)
+            
+            # Get the verifier code from the user.
+            verifier = unicode(raw_input('Verifier code: '))
+            
+            # Trade the request token for an access token
+            self.api.get_access_token(verifier)
+
         self.set_name = set_name
         self.set_id = None
 
@@ -33,13 +45,17 @@ class FlickrUploader(object):
             rsp = self.api.photosets_getList()
             self.set_id = self._find_set(rsp, self.set_name)
         if not self.set_id:
-            rsp = self.api.photosets_create(name=self.set_name, primary_photo_id=photo_id)
+            logger.debug("Creating a new set")
+            rsp = self.api.photosets_create(title=self.set_name, primary_photo_id=photo_id)
             self.set_id = self._get_set_id_from_rsp(rsp)
         else:
+            logger.debug("Adding photo to set")
             return self.api.photosets_addPhoto(photoset_id=self.set_id, photo_id=photo_id)
     
     def upload(self, photo):
+        logger.info("Uploading to Flickr: %s", photo)
         rsp = self.api.upload(photo._cached_file, title=photo.file_name)
+        logger.info("Uploading done: %s", photo)
         photo_id = self._get_photo_id_from_rsp(rsp)
         photo.upload_id = photo_id
         self._add_to_set(photo_id)

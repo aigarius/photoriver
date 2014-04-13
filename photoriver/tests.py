@@ -226,18 +226,15 @@ class UploaderTest(TestCase):
 class MockFlickrAPI(Mock):
     _called={}
 
-    def get_token_part_one(self, perms):
-        return ("token", "frob")
-
-    def get_token_part_two(self, tokens):
-        return
+    def token_valid(self, perms):
+        return True
 
     def upload(self, filename, title="123"):
         self._called['upload'] = filename
         return ElementTree.fromstring('<rsp stat="ok">\n<photoid>13827599313</photoid>\n</rsp>')
 
-    def photosets_create(self, name, primary_photo_id):
-        self._called['created.name'] = name
+    def photosets_create(self, title, primary_photo_id):
+        self._called['created.title'] = title
         self._called['created.primary_photo_id'] = primary_photo_id
         return ElementTree.fromstring('<rsp stat="ok">\n<photoset id="72157643905570745" url="http://www.flickr.com/photos/aigarius/sets/72157643905570745/" />\n</rsp>')
 
@@ -245,7 +242,7 @@ class MockFlickrAPI(Mock):
         string = """<rsp stat="ok">
 <photosets cancreate="1" page="1" pages="1" perpage="42" total="42">
         """
-        if "created.name" in self._called:
+        if "created.title" in self._called:
             string += """
     <photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" needs_interstitial="0" photos="1" primary="13827599313" server="5164" videos="0" visibility_can_see_set="1">
         <title>Photoriver Test 123</title>
@@ -287,7 +284,7 @@ class FlickrUploaderTest(TestCase):
         self.uploader.upload(photo_obj)
 
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_123.JPG")
-        self.assertEqual(self.uploader.api._called['created.name'], "Photoriver Test 123")
+        self.assertEqual(self.uploader.api._called['created.title'], "Photoriver Test 123")
         self.assertEqual(self.uploader.api._called['created.primary_photo_id'], 13827599313)
 
         photo_obj = Mock(file_name="IMG_124.JPG", _cached_file=".cache/IMG_124.JPG")
@@ -295,6 +292,8 @@ class FlickrUploaderTest(TestCase):
         self.uploader.upload(photo_obj)
 
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_124.JPG")
+        self.assertEqual(self.uploader.api._called['addPhoto.photoset_id'], 72157643905570745)
+        self.assertEqual(self.uploader.api._called['addPhoto.photo_id'], 13827599313)
 
 
 class IntegrationTest(TestCase):
