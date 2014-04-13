@@ -4,7 +4,6 @@ python:
     - "3.3"
     - "pypy"
 install:
-    - pip install coveralls
     - pip install -r requirements.txt
 script:
     - coverage run --source=photoriver setup.py test
