@@ -25,11 +25,11 @@ class ReceiverTest(TestCase):
     def setUp(self):
         mkdir("test_folder")
         self.receiver = FolderReceiver("test_folder/")
-    
+
     def tearDown(self):
         rmtree("test_folder", ignore_errors=True)
         rmtree(".cache", ignore_errors=True)
-    
+
     def test_nodata(self):
         rmtree("test_folder")
         self.assertEqual(self.receiver.get_list(), {})
@@ -37,28 +37,28 @@ class ReceiverTest(TestCase):
         mkdir("test_folder")
         self.assertEqual(self.receiver.get_list(), {})
         self.assertTrue(self.receiver.is_available())
-    
+
     def test_add_file(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
-        
+
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         cached_file = self.receiver.download_file('IMG_123.JPG')
         self.assertEqual(repr(cached_file), "Photo(./IMG_123.JPG)")
         with cached_file.open_file() as f:
             data = f.read()
-        
+
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
-        
+
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
-    
+
     def test_add_file_offline(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
-        
+
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         rename("test_folder", "other_folder")
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
@@ -76,9 +76,9 @@ class FlashAirReceiverTest(TestCase):
         self.files = {}
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
                                body=self.callback)
-        
+
         self.receiver = FlashAirReceiver(url="http://192.168.34.72/", timeout=0.01)
-       
+
     def callback(self, method, uri, headers):
         if uri == "http://192.168.34.72/command.cgi?op=120":
             return (200, headers, "02544d535730384708c00b78700d201")
@@ -104,24 +104,24 @@ class FlashAirReceiverTest(TestCase):
 
     def test_file_lists(self):
         self.assertEqual(self.receiver.get_list(), {})
-        
+
         self.files = {
             "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
             "IMG_124.JPG": {"size": 125, "adate": 17071, "atime": 28041},
         }
-        
+
         file_list = self.receiver.get_list()
         self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
-        
+
         httpretty.disable()
         file_list = self.receiver.get_list()
         self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
         httpretty.enable()
-    
+
     def test_file_list_errors(self):
         self.files = {
             "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
@@ -135,36 +135,36 @@ class FlashAirReceiverTest(TestCase):
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
                                body="WLANSD_FILELIST", status=404)
         self.assertEqual(self.receiver.get_list(), file_list)
-        
-    
-    
+
+
+
     def test_download(self):
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_123.JPG",
-                               body="JPEG DUMMY TEST DATA 1")        
+                               body="JPEG DUMMY TEST DATA 1")
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_124.JPG",
-                               body="JPEG DUMMY TEST DATA 2")        
+                               body="JPEG DUMMY TEST DATA 2")
         self.files = {
             "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
             "IMG_124.JPG": {"size": 125, "adate": 17071, "atime": 28041},
         }
-        
+
         file_list = self.receiver.get_list()
-        
+
         self.assertEqual(self.receiver._files['IMG_123.JPG'].open_file(), None)
-        
+
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
-        
+
         self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
-        
+
         self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
-        
-    
-        
+
+
+
 
 class ControllerTest(TestCase):
     def setUp(self):
@@ -176,14 +176,14 @@ class ControllerTest(TestCase):
 
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
-    
+
     def test_nodata(self):
         self.receiver.get_list.return_value = {}
 
         self.controller.process_all()
-        
+
         self.receiver.get_list.assert_called_once_with()
-        
+
     def test_basic_filtration(self):
         mock1 = Mock(file_name="IMG_123.JPG")
         mock2 = Mock(file_name="IMG_123.JPG", _cached=True)
@@ -194,30 +194,30 @@ class ControllerTest(TestCase):
         self.receiver.download_file.return_value = mock2
         self.filter1.filter.return_value = mock3
         self.filter2.filter.return_value = mock4
-        
+
         self.controller.process_all()
-        
+
         self.receiver.download_file.assert_called_once_with("IMG_123.JPG")
         self.filter1.filter.assert_called_once_with(mock2)
         self.filter2.filter.assert_called_once_with(mock3)
         self.uploader.upload.assert_called_once_with(mock4)
-        
-        
-class UploaderTest(TestCase):        
+
+
+class UploaderTest(TestCase):
     def setUp(self):
         self.uploader = FolderUploader("upload_folder/")
-    
+
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
         rmtree("upload_folder", ignore_errors=True)
-    
+
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG")
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
-        
+
         self.uploader.upload(photo_obj)
-        
+
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
@@ -231,16 +231,16 @@ class MockFlickrAPI(Mock):
 
     def get_token_part_two(self, tokens):
         return
-    
+
     def upload(self, filename, title="123"):
         self._called['upload'] = filename
         return ElementTree.fromstring('<rsp stat="ok">\n<photoid>13827599313</photoid>\n</rsp>')
-    
+
     def photosets_create(self, name, primary_photo_id):
         self._called['created.name'] = name
         self._called['created.primary_photo_id'] = primary_photo_id
         return ElementTree.fromstring('<rsp stat="ok">\n<photoset id="72157643905570745" url="http://www.flickr.com/photos/aigarius/sets/72157643905570745/" />\n</rsp>')
-     
+
     def photosets_getList(self):
         string = """<rsp stat="ok">
 <photosets cancreate="1" page="1" pages="1" perpage="42" total="42">
@@ -275,17 +275,17 @@ class FlickrUploaderTest(TestCase):
     def setUp(self):
         flickrapi.FlickrAPI = MockFlickrAPI
         self.uploader = FlickrUploader(set_name="Photoriver Test 123")
-    
+
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
-    
+
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG", _cached_file=".cache/IMG_123.JPG")
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
-        
+
         self.uploader.upload(photo_obj)
-        
+
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_123.JPG")
         self.assertEqual(self.uploader.api._called['created.name'], "Photoriver Test 123")
         self.assertEqual(self.uploader.api._called['created.primary_photo_id'], 13827599313)
@@ -303,13 +303,13 @@ class IntegrationTest(TestCase):
         rmtree("test_folder", ignore_errors=True)
         rmtree("upload_folder", ignore_errors=True)
 
-    def test_basic_pipeline(self):        
+    def test_basic_pipeline(self):
         mkdir("test_folder")
         receiver = FolderReceiver("test_folder/")
         uploader = FolderUploader("upload_folder/")
         with open("test_folder/IMG_123.JPG", "w") as f:
             f.write("DUMMY JPEG FILE HEADER")
-                
+
         controller = BasicController(receiver=receiver, uploaders=[uploader])
         controller.process_all()
 
@@ -317,12 +317,12 @@ class IntegrationTest(TestCase):
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
