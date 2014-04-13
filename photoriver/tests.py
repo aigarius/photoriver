@@ -244,22 +244,32 @@ class MockFlickrAPI(Mock):
     def photosets_getList(self):
         string = """<rsp stat="ok">
 <photosets cancreate="1" page="1" pages="1" perpage="42" total="42">
-	<photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" needs_interstitial="0" photos="1" primary="13827599313" secret="aa00f81f9d" server="5164" videos="0" visibility_can_see_set="1">
-		<title>Test 123</title>
-		<description />
-	</photoset>
-	<photoset can_comment="1" count_comments="0" count_views="1" date_create="1395533894" date_update="1395533914" farm="4" id="72157642764389724" needs_interstitial="0" photos="308" primary="11910296655" secret="a3456ac147" server="3749" videos="1" visibility_can_see_set="1">
-		<title>nonset</title>
-		<description />
-	</photoset>
-	<photoset can_comment="1" count_comments="0" count_views="87" date_create="1392560704" date_update="1392560766" farm="8" id="72157641062521883" needs_interstitial="0" photos="1310" primary="12559920665" secret="e2b3b7879a" server="7289" videos="0" visibility_can_see_set="1">
-		<title>Hong Kong trip</title>
-		<description>with side trips to Tokyo and Macao</description>
-	</photoset>
+        """
+        if "created.name" in self._called:
+            string += """
+    <photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" needs_interstitial="0" photos="1" primary="13827599313" server="5164" videos="0" visibility_can_see_set="1">
+        <title>Photoriver Test 123</title>
+        <description />
+    </photoset>
+            """
+        string += """
+    <photoset can_comment="1" count_comments="0" count_views="1" date_create="1395533894" date_update="1395533914" farm="4" id="72157642764389724" needs_interstitial="0" photos="308" primary="11910296655" server="3749" videos="1" visibility_can_see_set="1">
+        <title>nonset</title>
+        <description />
+    </photoset>
+    <photoset can_comment="1" count_comments="0" count_views="87" date_create="1392560704" date_update="1392560766" farm="8" id="72157641062521883" needs_interstitial="0" photos="1310" primary="12559920665" server="7289" videos="0" visibility_can_see_set="1">
+        <title>Hong Kong trip</title>
+        <description>with side trips to Tokyo and Macao</description>
+    </photoset>
 </photosets>
 </rsp>
         """
         return ElementTree.fromstring(string)
+
+    def photosets_addPhoto(self, photoset_id, photo_id):
+        self._called['addPhoto.photoset_id'] = photoset_id
+        self._called['addPhoto.photo_id'] = photo_id
+        return ElementTree.fromstring('<rsp stat="ok">\n</rsp>')
 
 class FlickrUploaderTest(TestCase):
     def setUp(self):
@@ -279,7 +289,13 @@ class FlickrUploaderTest(TestCase):
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_123.JPG")
         self.assertEqual(self.uploader.api._called['created.name'], "Photoriver Test 123")
         self.assertEqual(self.uploader.api._called['created.primary_photo_id'], 13827599313)
-    
+
+        photo_obj = Mock(file_name="IMG_124.JPG", _cached_file=".cache/IMG_124.JPG")
+
+        self.uploader.upload(photo_obj)
+
+        self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_124.JPG")
+
 
 class IntegrationTest(TestCase):
     def tearDown(self):
