@@ -21,20 +21,20 @@ When I am in Live Event mode I would like the photos that I take to immediately 
 When I am in Travel mode, I want to delay photo uploading until I am back at the hotel with its high speed Wifi, but also have an option to share some snapshots immediately over 3G or random cafe Wifi. I am likely to take more photos that there is memory in my phone, so I would like to clear original files from the phone while keeping them in the SD card and in the cloud, but still keeping enough metadata to allow re-uploading an image or choosing another image in a burst.
 
 Implementation tagets (in priority order):
- * Python based, Live Event mode moving the images between two folders;
- * FlashAir receiver;
+ * Python based, Live Event mode moving the images between two folders; :white_check_mark:
+ * FlashAir receiver; :white_check_mark:
  * Google+ album uploader;
  * Best-in-burst selection filter;
  * GPS Tagging filter with a hard-coded location;
  * Date fixing filter with a hard-coded offset;
- * Flick uploader;
+ * Flick uploader; :white_check_mark:
  * Chooser command to change choise of best-in-burst;
  * ...
  * Android port
 
 Non-functional requirements:
- * 100% test coverage;
- * test-driven development;
+ * 100% test coverage; :white_check_mark:
+ * test-driven development; :white_check_mark:
  * parallel processing;
  * fault tolerance;
  * detailed logging;
