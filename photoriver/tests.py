@@ -42,6 +42,7 @@ class ReceiverTest(TestCase):
         
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         cached_file = self.receiver.download_file('IMG_123.JPG')
+        self.assertEqual(repr(cached_file), "Photo(./IMG_123.JPG)")
         with cached_file.open_file() as f:
             data = f.read()
         

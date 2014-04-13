@@ -1,7 +1,7 @@
 #!python
 
 class Photo(object):
-    def __init__(self, file_name, dirname=None, size=None, timestamp=None):
+    def __init__(self, file_name, dirname=".", size=None, timestamp=None):
         self.file_name = file_name
         self.dirname = dirname
         self.size = size
