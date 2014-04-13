@@ -8,6 +8,7 @@ from shutil import rmtree
 from unittest import TestCase
 from mock import Mock
 from io import StringIO
+from datetime import datetime
 
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
@@ -63,10 +64,20 @@ class ReceiverTest(TestCase):
 class FlashAirReceiverTest(TestCase):
     def setUp(self):
         httpretty.enable()
-        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi?op=120",
-                               body="02544d535730384708c00b78700d201")
+        self.files = {}
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body=self.callback)
         
         self.receiver = FlashAirReceiver(url="http://192.168.34.72/")
+       
+    def callback(self, method, uri, headers):
+        if uri == "http://192.168.34.72/command.cgi?op=120":
+            return (200, headers, "02544d535730384708c00b78700d201")
+        if uri == "http://192.168.34.72/command.cgi?op=100&dir=/DCIM":
+            lines = ["WLANSD_FILELIST"]
+            lines += [",".join(("/DCIM", x, str(y['size']), str(32), str(y['adate']), str(y['atime']))) for x, y in self.files.items()]
+            text = "\n".join(lines)
+            return (200, headers, text)
 
     def tearDown(self):
         httpretty.disable()  # disable afterwards, so that you will have no problems in code that uses that socket module
@@ -80,6 +91,38 @@ class FlashAirReceiverTest(TestCase):
         self.assertFalse(self.receiver.is_available())
         httpretty.enable()
         self.assertTrue(self.receiver.is_available())
+
+    def test_file_lists(self):
+        self.assertEqual(self.receiver.get_list(), {})
+        
+        self.files = {
+            "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
+            "IMG_124.JPG": {"size": 125, "adate": 17071, "atime": 28041},
+        }
+        
+        file_list = self.receiver.get_list()
+        self.assertEqual(file_list.keys(), ["IMG_123.JPG", "IMG_124.JPG"])
+        self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
+        self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
+    
+    def test_download(self):
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_123.JPG",
+                               body="JPEG DUMMY TEST DATA 1")        
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_124.JPG",
+                               body="JPEG DUMMY TEST DATA 2")        
+        self.files = {
+            "IMG_123.JPG": {"size": 123, "adate": 17071, "atime": 28040},
+            "IMG_124.JPG": {"size": 125, "adate": 17071, "atime": 28041},
+        }
+        
+        file_list = self.receiver.get_list()
+        cached_file = self.receiver.download_file('IMG_123.JPG')
+        with cached_file.open_file() as f:
+            data = f.read()
+        
+        self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
+        
+    
         
 
 class ControllerTest(TestCase):
