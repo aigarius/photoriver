@@ -15,4 +15,3 @@ controller = BasicController(receiver=receiver, uploaders=[uploader])
 while(True):
     controller.process_all()
     time.sleep(1)
-

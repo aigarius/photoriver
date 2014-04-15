@@ -19,6 +19,7 @@ class FolderUploader(object):
             with photo.open_file() as src:
                 shutil.copyfileobj(src, dst)
 
+
 class FlickrUploader(object):
     def __init__(self, set_name):
         key = u"26a60d41603c1949a189f898f67d3247"
@@ -27,13 +28,13 @@ class FlickrUploader(object):
         if not self.api.token_valid(perms=u'write'):
             # Get a request token
             self.api.get_request_token(oauth_callback='oob')
-            
+
             authorize_url = self.api.auth_url(perms=u'write')
             print("Open this URL to authorize: ", authorize_url)
-            
+
             # Get the verifier code from the user.
             verifier = unicode(raw_input('Verifier code: '))
-            
+
             # Trade the request token for an access token
             self.api.get_access_token(verifier)
 
@@ -51,7 +52,7 @@ class FlickrUploader(object):
         else:
             logger.debug("Adding photo to set")
             return self.api.photosets_addPhoto(photoset_id=self.set_id, photo_id=photo_id)
-    
+
     def upload(self, photo):
         logger.info("Uploading to Flickr: %s", photo)
         rsp = self.api.upload(photo._cached_file, title=photo.file_name)
@@ -59,7 +60,7 @@ class FlickrUploader(object):
         photo_id = self._get_photo_id_from_rsp(rsp)
         photo.upload_id = photo_id
         self._add_to_set(photo_id)
-    
+
     def _find_set(self, rsp, set_name):
         set_id = None
         for aset in rsp.iter("photoset"):
@@ -67,9 +68,9 @@ class FlickrUploader(object):
             if title == set_name:
                 set_id = aset.attrib['id']
         return set_id
-    
+
     def _get_set_id_from_rsp(self, rsp):
         return int(rsp.find("photoset").attrib['id'])
-        
+
     def _get_photo_id_from_rsp(self, rsp):
         return int(rsp.find('photoid').text)

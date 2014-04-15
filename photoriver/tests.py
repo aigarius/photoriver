@@ -16,9 +16,10 @@ from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader, FlickrUploader
 
+
 class BasicTest(TestCase):
     def test_reality(self):
-        self.assertTrue(2+2==4)
+        self.assertTrue(2 + 2 == 4)
 
 
 class ReceiverTest(TestCase):
@@ -136,8 +137,6 @@ class FlashAirReceiverTest(TestCase):
                                body="WLANSD_FILELIST", status=404)
         self.assertEqual(self.receiver.get_list(), file_list)
 
-
-
     def test_download(self):
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/DCIM/IMG_123.JPG",
                                body="JPEG DUMMY TEST DATA 1")
@@ -162,8 +161,6 @@ class FlashAirReceiverTest(TestCase):
             data = f.read()
 
         self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
-
-
 
 
 class ControllerTest(TestCase):
@@ -223,8 +220,9 @@ class UploaderTest(TestCase):
             data = f.read()
         self.assertEqual(data, "JPEG DUMMY TEST DATA")
 
+
 class MockFlickrAPI(Mock):
-    _called={}
+    _called = {}
 
     def token_valid(self, perms):
         return True
@@ -236,7 +234,11 @@ class MockFlickrAPI(Mock):
     def photosets_create(self, title, primary_photo_id):
         self._called['created.title'] = title
         self._called['created.primary_photo_id'] = primary_photo_id
-        return ElementTree.fromstring('<rsp stat="ok">\n<photoset id="72157643905570745" url="http://www.flickr.com/photos/aigarius/sets/72157643905570745/" />\n</rsp>')
+        return ElementTree.fromstring('''
+<rsp stat="ok">
+    <photoset id="72157643905570745" url="http://www.flickr.com/photos/aigarius/sets/72157643905570745/" />
+</rsp>
+        ''')
 
     def photosets_getList(self):
         string = """<rsp stat="ok">
@@ -244,17 +246,20 @@ class MockFlickrAPI(Mock):
         """
         if "created.title" in self._called:
             string += """
-    <photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" needs_interstitial="0" photos="1" primary="13827599313" server="5164" videos="0" visibility_can_see_set="1">
+    <photoset can_comment="1" count_comments="0" count_views="0" date_create="1397413231" date_update="0" farm="6" id="72157643905570745" \
+    needs_interstitial="0" photos="1" primary="13827599313" server="5164" videos="0" visibility_can_see_set="1">
         <title>Photoriver Test 123</title>
         <description />
     </photoset>
             """
         string += """
-    <photoset can_comment="1" count_comments="0" count_views="1" date_create="1395533894" date_update="1395533914" farm="4" id="72157642764389724" needs_interstitial="0" photos="308" primary="11910296655" server="3749" videos="1" visibility_can_see_set="1">
+    <photoset can_comment="1" count_comments="0" count_views="1" date_create="1395533894" date_update="1395533914" farm="4" id="72157642764389724" \
+    needs_interstitial="0" photos="308" primary="11910296655" server="3749" videos="1" visibility_can_see_set="1">
         <title>nonset</title>
         <description />
     </photoset>
-    <photoset can_comment="1" count_comments="0" count_views="87" date_create="1392560704" date_update="1392560766" farm="8" id="72157641062521883" needs_interstitial="0" photos="1310" primary="12559920665" server="7289" videos="0" visibility_can_see_set="1">
+    <photoset can_comment="1" count_comments="0" count_views="87" date_create="1392560704" date_update="1392560766" farm="8" id="72157641062521883" \
+    needs_interstitial="0" photos="1310" primary="12559920665" server="7289" videos="0" visibility_can_see_set="1">
         <title>Hong Kong trip</title>
         <description>with side trips to Tokyo and Macao</description>
     </photoset>
@@ -267,6 +272,7 @@ class MockFlickrAPI(Mock):
         self._called['addPhoto.photoset_id'] = photoset_id
         self._called['addPhoto.photo_id'] = photo_id
         return ElementTree.fromstring('<rsp stat="ok">\n</rsp>')
+
 
 class FlickrUploaderTest(TestCase):
     def setUp(self):
@@ -316,12 +322,3 @@ class IntegrationTest(TestCase):
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
         self.assertEqual(data, "DUMMY JPEG FILE HEADER")
-
-
-
-
-
-
-
-
-

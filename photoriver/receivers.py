@@ -12,6 +12,7 @@ from photoriver.models import Photo
 
 logger = logging.getLogger(__name__)
 
+
 class BaseReceiver(object):
     def __init__(self, source):
         self.source = source
@@ -20,14 +21,14 @@ class BaseReceiver(object):
         if not os.path.exists(self._cache_dir):
             os.mkdir(self._cache_dir)
 
-    
+
 class FolderReceiver(BaseReceiver):
     def __init__(self, source):
         super(FolderReceiver, self).__init__(source)
-    
+
     def is_available(self):
         return os.path.exists(self.source)
-    
+
     def get_list(self):
         if self.is_available():
             files = os.listdir(self.source)
@@ -35,7 +36,7 @@ class FolderReceiver(BaseReceiver):
                 if file_name not in self._files:
                     self._files[file_name] = Photo(file_name)
         return self._files
-    
+
     def download_file(self, name):
         photo = self._files[name]
         if photo._downloaded:
@@ -63,7 +64,7 @@ class FlashAirReceiver(BaseReceiver):
                 cid = r.text
         except:
             pass
-        
+
         if cid:
             if self.cid:
                 return cid == self.cid
@@ -72,7 +73,7 @@ class FlashAirReceiver(BaseReceiver):
                 return True
         else:
             return False
-    
+
     def get_list(self):
         try:
             r = requests.get(self.source + "command.cgi?op=100&DIR=/DCIM/102CANON", timeout=self.timeout)
@@ -81,7 +82,7 @@ class FlashAirReceiver(BaseReceiver):
             lines = r.text.split("\n")
             if lines[0].strip() != "WLANSD_FILELIST":
                 return self._files
-                
+
             files = {}
             for line in lines[1:]:
                 if not line:
@@ -91,18 +92,18 @@ class FlashAirReceiver(BaseReceiver):
                 adate = int(adate)
                 atime = int(atime)
                 timestamp = datetime(
-                    ((adate&(0x3F<<9))>>9)+1980, 
-                    ((adate&(0x0F<<5))>>5), 
-                    adate&(0x1F), 
-                    ((atime&(0x1F<<11))>>11), 
-                    ((atime&(0x3F<<5))>>5), 
-                    (atime&(0x1F))*2
+                    ((adate & (0x3F << 9)) >> 9) + 1980,
+                    ((adate & (0x0F << 5)) >> 5),
+                    adate & (0x1F),
+                    ((atime & (0x1F << 11)) >> 11),
+                    ((atime & (0x3F << 5)) >> 5),
+                    (atime & (0x1F)) * 2
                 )
                 files[filename] = Photo(filename, dirname=dirname, size=size, timestamp=timestamp)
-            
+
             if files != self._files:
                 logger.info("New photos found on FlashAir: %s", set(files.keys())-set(self._files.keys()))
-            
+
             self._files = files
         except:
             pass
@@ -121,4 +122,3 @@ class FlashAirReceiver(BaseReceiver):
         photo._cached_file = os.path.join(self._cache_dir, name)
         logging.info("Done downloading: %s", name)
         return photo
-
