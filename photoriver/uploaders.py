@@ -6,7 +6,10 @@ import os.path
 
 import logging
 
+from gdata import photos
+
 logger = logging.getLogger(__name__)
+
 
 class FolderUploader(object):
     def __init__(self, destination):
