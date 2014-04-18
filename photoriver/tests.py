@@ -3,11 +3,14 @@
 import httpretty
 import os.path
 import flickrapi
+import json
+import requests
+import logging
 
 from os import mkdir, rename
 from shutil import rmtree
 from unittest import TestCase
-from mock import Mock
+from mock import Mock, patch
 from io import StringIO
 from datetime import datetime
 from xml.etree import ElementTree
@@ -15,6 +18,9 @@ from xml.etree import ElementTree
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader, FlickrUploader
+from photoriver.gplusapi import GPhoto
+
+logging.basicConfig(level=logging.CRITICAL)
 
 
 class BasicTest(TestCase):
@@ -224,7 +230,7 @@ class UploaderTest(TestCase):
 class MockFlickrAPI(Mock):
     _called = {}
 
-    def token_valid(self, perms):
+    def token_valid(self, perms):  # TODO - test auth code too
         return True
 
     def upload(self, filename, title="123"):
@@ -277,7 +283,10 @@ class MockFlickrAPI(Mock):
 class FlickrUploaderTest(TestCase):
     def setUp(self):
         flickrapi.FlickrAPI = MockFlickrAPI
-        self.uploader = FlickrUploader(set_name="Photoriver Test 123")
+        with patch("builtins.input") as input_mock:
+            input_mock.return_value = b"1234-5678"
+
+            self.uploader = FlickrUploader(set_name="Photoriver Test 123")
 
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
@@ -300,6 +309,47 @@ class FlickrUploaderTest(TestCase):
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_124.JPG")
         self.assertEqual(self.uploader.api._called['addPhoto.photoset_id'], 72157643905570745)
         self.assertEqual(self.uploader.api._called['addPhoto.photo_id'], 13827599313)
+
+gphoto_albums_xml = open("photoriver/testdata/galbums.xml", encoding="utf8").read()
+gphoto_photos_xml = open("photoriver/testdata/gphotos.xml", encoding="utf8").read()
+
+
+class GPhotoApiTest(TestCase):
+    def setUp(self):
+        httpretty.enable()
+
+    def tearDown(self):
+        rmtree(".cache", ignore_errors=True)
+        httpretty.disable()  # disable afterwards, so that you will have no problems in code that uses that socket module
+        httpretty.reset()    # reset HTTPretty state (clean up registered urls and request history)
+
+    def test_gphoto_api(self):
+        token_data = {
+            "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
+            "expires_in": 3920,
+            "token_type": "Bearer",
+            "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
+        }
+        httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(token_data))
+        with patch("builtins.input") as input_mock:
+            input_mock.return_value = b"1234-5678"
+
+            api = GPhoto("test@example.com")
+
+        self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
+
+        httpretty.register_uri(httpretty.GET, "https://picasaweb.google.com/data/feed/api/user/default", body=gphoto_albums_xml)
+        httpretty.register_uri(httpretty.GET,
+                               "https://picasaweb.google.com/data/feed/api/user/default/albumid/5992553397538619153",
+                               body=gphoto_photos_xml
+                               )
+
+        albums = api.get_albums()
+        self.assertIn("Tampere high and dry", albums.keys())
+
+        photos = api.get_photos(albums["Tampere high and dry"]["id"])
+        self.assertEqual(len(photos), 18)
+        self.assertIn("20110815_174429_100-6804.jpg", photos.keys())
 
 
 class IntegrationTest(TestCase):
