@@ -1,5 +1,6 @@
 #!python
 
+from io import open
 
 class Photo(object):
     def __init__(self, file_name, dirname=".", size=None, timestamp=None):

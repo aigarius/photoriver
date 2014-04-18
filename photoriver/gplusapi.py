@@ -1,4 +1,5 @@
 import requests
+import six
 
 from xml.etree import ElementTree
 
@@ -19,7 +20,7 @@ class GPhoto(object):
     def __init__(self, username):
         url = "{}?client_id={}&redirect_uri={}&scope={}&response_type=code".format(auth_url, client_id, redirect_uri, url_base)
         logger.warning("Authentication URL: %s", url)
-        code = input("Paste authorization code: ")
+        code = six.moves.input("Paste authorization code: ")
         token_json = requests.post(
             token_uri,
             data={
@@ -36,7 +37,7 @@ class GPhoto(object):
         }
 
     def get_albums(self):
-        album_feed = requests.get(url_albums, headers=self.headers).text
+        album_feed = requests.get(url_albums, headers=self.headers).text.encode("utf8")
 
         albums = {}
         root = ElementTree.fromstring(album_feed)
@@ -49,7 +50,7 @@ class GPhoto(object):
         return albums
 
     def get_photos(self, albumID):
-        photos_feed = requests.get(url_albums + "/albumid/" + albumID, headers=self.headers).text
+        photos_feed = requests.get(url_albums + "/albumid/" + albumID, headers=self.headers).text.encode("utf8")
 
         photos = {}
         root = ElementTree.fromstring(photos_feed)

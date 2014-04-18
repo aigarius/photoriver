@@ -6,12 +6,13 @@ import flickrapi
 import json
 import requests
 import logging
+import six
 
 from os import mkdir, rename
 from shutil import rmtree
 from unittest import TestCase
 from mock import Mock, patch
-from io import StringIO
+from io import StringIO, open
 from datetime import datetime
 from xml.etree import ElementTree
 
@@ -47,7 +48,7 @@ class ReceiverTest(TestCase):
 
     def test_add_file(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
-            f.write("DUMMY JPEG FILE HEADER")
+            f.write(u"DUMMY JPEG FILE HEADER")
 
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         cached_file = self.receiver.download_file('IMG_123.JPG')
@@ -55,23 +56,23 @@ class ReceiverTest(TestCase):
         with cached_file.open_file() as f:
             data = f.read()
 
-        self.assertEqual(data, "DUMMY JPEG FILE HEADER")
+        self.assertEqual(data, u"DUMMY JPEG FILE HEADER")
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
 
-        self.assertEqual(data, "DUMMY JPEG FILE HEADER")
+        self.assertEqual(data, u"DUMMY JPEG FILE HEADER")
 
     def test_add_file_offline(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
-            f.write("DUMMY JPEG FILE HEADER")
+            f.write(u"DUMMY JPEG FILE HEADER")
 
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         rename("test_folder", "other_folder")
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
 
         with open("other_folder/IMG_124.JPG", "w") as f:
-            f.write("DUMMY JPEG FILE HEADER 2")
+            f.write(u"DUMMY JPEG FILE HEADER 2")
 
         rename("other_folder", "test_folder")
         self.assertEqual(sorted(self.receiver.get_list().keys()), ['IMG_123.JPG', 'IMG_124.JPG'])
@@ -104,9 +105,12 @@ class FlashAirReceiverTest(TestCase):
     def test_availability(self):
         self.assertTrue(self.receiver.is_available())
         self.assertTrue(self.receiver.is_available())
-        httpretty.disable()
+        httpretty.reset()
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body="ERROR", status_code=404)
         self.assertFalse(self.receiver.is_available())
-        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body=self.callback)
         self.assertTrue(self.receiver.is_available())
 
     def test_file_lists(self):
@@ -122,12 +126,15 @@ class FlashAirReceiverTest(TestCase):
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
 
-        httpretty.disable()
+        httpretty.reset()
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body="ERROR", status_code=404)
         file_list = self.receiver.get_list()
         self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
         self.assertEqual(file_list["IMG_124.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 18))
-        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
+                               body=self.callback)
 
     def test_file_list_errors(self):
         self.files = {
@@ -161,12 +168,12 @@ class FlashAirReceiverTest(TestCase):
         with cached_file.open_file() as f:
             data = f.read()
 
-        self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
+        self.assertEqual(data, u"JPEG DUMMY TEST DATA 1")
         cached_file = self.receiver.download_file('IMG_123.JPG')
         with cached_file.open_file() as f:
             data = f.read()
 
-        self.assertEqual(data, "JPEG DUMMY TEST DATA 1")
+        self.assertEqual(data, u"JPEG DUMMY TEST DATA 1")
 
 
 class ControllerTest(TestCase):
@@ -224,7 +231,7 @@ class UploaderTest(TestCase):
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
-        self.assertEqual(data, "JPEG DUMMY TEST DATA")
+        self.assertEqual(data, u"JPEG DUMMY TEST DATA")
 
 
 class MockFlickrAPI(Mock):
@@ -283,7 +290,7 @@ class MockFlickrAPI(Mock):
 class FlickrUploaderTest(TestCase):
     def setUp(self):
         flickrapi.FlickrAPI = MockFlickrAPI
-        with patch("builtins.input") as input_mock:
+        with patch("six.moves.input") as input_mock:
             input_mock.return_value = b"1234-5678"
 
             self.uploader = FlickrUploader(set_name="Photoriver Test 123")
@@ -331,7 +338,7 @@ class GPhotoApiTest(TestCase):
             "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
         }
         httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(token_data))
-        with patch("builtins.input") as input_mock:
+        with patch("six.moves.input") as input_mock:
             input_mock.return_value = b"1234-5678"
 
             api = GPhoto("test@example.com")
@@ -363,7 +370,7 @@ class IntegrationTest(TestCase):
         receiver = FolderReceiver("test_folder/")
         uploader = FolderUploader("upload_folder/")
         with open("test_folder/IMG_123.JPG", "w") as f:
-            f.write("DUMMY JPEG FILE HEADER")
+            f.write(u"DUMMY JPEG FILE HEADER")
 
         controller = BasicController(receiver=receiver, uploaders=[uploader])
         controller.process_all()
@@ -371,4 +378,4 @@ class IntegrationTest(TestCase):
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         with open("upload_folder/IMG_123.JPG") as f:
             data = f.read()
-        self.assertEqual(data, "DUMMY JPEG FILE HEADER")
+        self.assertEqual(data, u"DUMMY JPEG FILE HEADER")

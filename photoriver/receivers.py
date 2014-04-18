@@ -6,6 +6,7 @@ import shutil
 import requests
 import logging
 
+from io import open
 from datetime import datetime
 
 from photoriver.models import Photo

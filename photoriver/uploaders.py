@@ -3,6 +3,9 @@
 import flickrapi
 import shutil
 import os.path
+import six
+
+from io import open
 
 import logging
 
@@ -34,7 +37,7 @@ class FlickrUploader(object):
             print("Open this URL to authorize: ", authorize_url)
 
             # Get the verifier code from the user.
-            verifier = unicode(raw_input('Verifier code: '))
+            verifier = unicode(six.moves.input('Verifier code: '))
 
             # Trade the request token for an access token
             self.api.get_access_token(verifier)
