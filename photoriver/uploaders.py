@@ -7,6 +7,8 @@ import six
 
 from io import open
 
+from photoriver.gplusapi import GPhoto
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ class FlickrUploader(object):
     def upload(self, photo):
         logger.info("Uploading to Flickr: %s", photo)
         rsp = self.api.upload(photo._cached_file, title=photo.file_name)
-        logger.info("Uploading done: %s", photo)
+        logger.info("Uploading to Flickr done: %s", photo)
         photo_id = self._get_photo_id_from_rsp(rsp)
         photo.upload_id = photo_id
         self._add_to_set(photo_id)
@@ -78,3 +80,20 @@ class FlickrUploader(object):
 
     def _get_photo_id_from_rsp(self, rsp):
         return int(rsp.find('photoid').text)
+
+
+class GPlusUploader(object):
+    def __init__(self, set_name):
+        self.api = GPhoto()
+        albums = self.api.get_albums()
+        if set_name not in albums:
+            logger.info("Creating an album")
+            self.api.create_album(set_name)
+            albums = self.api.get_albums()
+        self.album = albums[set_name]
+        logger.info("Using album with id (%s)", self.album["id"])
+
+    def upload(self, photo):
+        logger.info("Uploading to G+: %s", photo)
+        self.api.upload(photo._cached_file, photo.file_name, self.album["id"])
+        logger.info("Uploading to G+ done: %s", photo)

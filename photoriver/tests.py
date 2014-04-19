@@ -18,7 +18,7 @@ from xml.etree import ElementTree
 
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
 from photoriver.controllers import BasicController
-from photoriver.uploaders import FolderUploader, FlickrUploader
+from photoriver.uploaders import FolderUploader, FlickrUploader, GPlusUploader
 from photoriver.gplusapi import GPhoto
 
 logging.basicConfig(level=logging.CRITICAL)
@@ -369,6 +369,35 @@ class GPhotoApiTest(TestCase):
             f.write(u"DUMMY JPEG FILE HEADER")
         self.assertTrue(api.upload("IMG_123.JPG", "IMG_321", albums["Tampere high and dry"]["id"]))
         remove("IMG_123.JPG")
+
+
+class GPhotoTest(TestCase):
+    def test_gphoto(self):
+        api_obj = Mock()
+        api_obj.get_albums.side_effect = [{}, {"Test 123": {"id": "23456"}}, {"Test 123": {"id": "23456"}}]
+        api_obj.create_album.return_value = True
+        with patch("photoriver.uploaders.GPhoto") as api_mock:
+            api_mock.return_value = api_obj
+            with patch("six.moves.input") as input_mock:
+                input_mock.return_value = b"1234-5678"
+
+                # With album creation
+                uploader = GPlusUploader("Test 123")
+                api_obj.create_album.assert_called_once_with("Test 123")
+                self.assertEqual(api_obj.get_albums.call_count, 2)
+
+                # With existing album
+                uploader = GPlusUploader("Test 123")
+                api_obj.create_album.assert_called_once_with("Test 123")
+                self.assertEqual(api_obj.get_albums.call_count, 3)
+
+        photo_obj = Mock(file_name="IMG_123.JPG", _cached_file=".cache/IMG_123.JPG")
+        photo_file = StringIO(u"JPEG DUMMY TEST DATA")
+        photo_obj.open_file.return_value = photo_file
+
+        uploader.upload(photo_obj)
+
+        api_obj.upload.assert_called_once_with(".cache/IMG_123.JPG", "IMG_123.JPG", "23456")
 
 
 class IntegrationTest(TestCase):
