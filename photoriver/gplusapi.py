@@ -15,23 +15,32 @@ token_uri = "https://accounts.google.com/o/oauth2/token"
 url_base = "https://picasaweb.google.com/data/"
 url_albums = "https://picasaweb.google.com/data/feed/api/user/default"
 
+album_post = """
+<entry xmlns='http://www.w3.org/2005/Atom' xmlns:media='http://search.yahoo.com/mrss/' xmlns:gphoto='http://schemas.google.com/photos/2007'>
+    <title type='text'>{0}</title>
+    <category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/photos/2007#album'></category>
+</entry>
+"""
+
 
 class GPhoto(object):
-    def __init__(self, username):
-        url = "{}?client_id={}&redirect_uri={}&scope={}&response_type=code".format(auth_url, client_id, redirect_uri, url_base)
-        logger.warning("Authentication URL: %s", url)
-        code = six.moves.input("Paste authorization code: ")
-        token_json = requests.post(
-            token_uri,
-            data={
-                "code": code,
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "redirect_uri": 'urn:ietf:wg:oauth:2.0:oob',
-                "grant_type": "authorization_code",
-            },
-        ).json()
-        self.token = token_json["access_token"]
+    def __init__(self, token=None):
+        if token:
+            self.token = token
+        else:
+            url = "{}?client_id={}&redirect_uri={}&scope={}&response_type=code".format(auth_url, client_id, redirect_uri, url_base)
+            code = six.moves.input("URL: {0}\nPaste authorization code: ".format(url))
+            token_json = requests.post(
+                token_uri,
+                data={
+                    "code": code,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": 'urn:ietf:wg:oauth:2.0:oob',
+                    "grant_type": "authorization_code",
+                },
+            ).json()
+            self.token = token_json["access_token"]
         self.headers = {
             "Authorization": "Bearer {}".format(self.token)
         }
@@ -63,7 +72,20 @@ class GPhoto(object):
         return photos
 
     def create_album(self, title):
-        pass
+        headers = {"Content-Type": "application/atom+xml"}
+        headers.update(self.headers)
+        response = requests.post(url_albums, headers=headers, data=album_post.format(title))
+        return response.status_code == 201
 
     def upload(self, photofile, filename, albumID):
-        pass
+        headers = {
+            "Slug": filename,
+            "Content-Type": "image/jpeg",
+        }
+        headers.update(self.headers)
+        response = requests.post(
+            url_albums + "/albumid/" + albumID,
+            headers=headers,
+            data=open(photofile, "rb")
+        )
+        return response.status_code == 201

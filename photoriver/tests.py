@@ -8,7 +8,7 @@ import requests
 import logging
 import six
 
-from os import mkdir, rename
+from os import mkdir, rename, remove
 from shutil import rmtree
 from unittest import TestCase
 from mock import Mock, patch
@@ -107,7 +107,7 @@ class FlashAirReceiverTest(TestCase):
         self.assertTrue(self.receiver.is_available())
         httpretty.reset()
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
-                               body="ERROR", status_code=404)
+                               body="ERROR", status=404)
         self.assertFalse(self.receiver.is_available())
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
                                body=self.callback)
@@ -128,7 +128,7 @@ class FlashAirReceiverTest(TestCase):
 
         httpretty.reset()
         httpretty.register_uri(httpretty.GET, "http://192.168.34.72/command.cgi",
-                               body="ERROR", status_code=404)
+                               body="ERROR", status=404)
         file_list = self.receiver.get_list()
         self.assertEqual(sorted(list(file_list.keys())), ["IMG_123.JPG", "IMG_124.JPG"])
         self.assertEqual(file_list["IMG_123.JPG"].timestamp, datetime(2013, 5, 15, 13, 44, 16))
@@ -341,7 +341,7 @@ class GPhotoApiTest(TestCase):
         with patch("six.moves.input") as input_mock:
             input_mock.return_value = b"1234-5678"
 
-            api = GPhoto("test@example.com")
+            api = GPhoto()
 
         self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
 
@@ -357,6 +357,18 @@ class GPhotoApiTest(TestCase):
         photos = api.get_photos(albums["Tampere high and dry"]["id"])
         self.assertEqual(len(photos), 18)
         self.assertIn("20110815_174429_100-6804.jpg", photos.keys())
+
+        httpretty.register_uri(httpretty.POST, "https://picasaweb.google.com/data/feed/api/user/default", status=201)
+        httpretty.register_uri(httpretty.POST,
+                               "https://picasaweb.google.com/data/feed/api/user/default/albumid/5992553397538619153",
+                               status=201)
+
+        self.assertTrue(api.create_album("Test 123"))
+
+        with open("IMG_123.JPG", "w") as f:
+            f.write(u"DUMMY JPEG FILE HEADER")
+        self.assertTrue(api.upload("IMG_123.JPG", "IMG_321", albums["Tampere high and dry"]["id"]))
+        remove("IMG_123.JPG")
 
 
 class IntegrationTest(TestCase):
