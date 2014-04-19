@@ -226,7 +226,8 @@ class UploaderTest(TestCase):
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
 
-        self.uploader.upload(photo_obj)
+        f = self.uploader.upload(photo_obj)
+        f.result()
 
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         with open("upload_folder/IMG_123.JPG") as f:
@@ -303,7 +304,8 @@ class FlickrUploaderTest(TestCase):
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
 
-        self.uploader.upload(photo_obj)
+        f = self.uploader.upload(photo_obj)
+        f.result()
 
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_123.JPG")
         self.assertEqual(self.uploader.api._called['created.title'], "Photoriver Test 123")
@@ -311,7 +313,8 @@ class FlickrUploaderTest(TestCase):
 
         photo_obj = Mock(file_name="IMG_124.JPG", _cached_file=".cache/IMG_124.JPG")
 
-        self.uploader.upload(photo_obj)
+        f = self.uploader.upload(photo_obj)
+        f.result()
 
         self.assertEqual(self.uploader.api._called['upload'], ".cache/IMG_124.JPG")
         self.assertEqual(self.uploader.api._called['addPhoto.photoset_id'], 72157643905570745)
@@ -415,6 +418,8 @@ class IntegrationTest(TestCase):
 
         controller = BasicController(receiver=receiver, uploaders=[uploader])
         controller.process_all()
+        for future in controller.futures:
+            future.result()
 
         self.assertTrue(os.path.exists("upload_folder/IMG_123.JPG"))
         with open("upload_folder/IMG_123.JPG") as f:

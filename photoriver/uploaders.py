@@ -6,6 +6,7 @@ import os.path
 import six
 
 from io import open
+from concurrent.futures import ThreadPoolExecutor
 
 from photoriver.gplusapi import GPhoto
 
@@ -14,20 +15,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class FolderUploader(object):
+class BaseUploader(object):
+    def __init__(self):
+        self.executor = ThreadPoolExecutor(max_workers=5)
+
+    def upload(self, photo):
+        return self.executor.submit(self._upload, photo)
+
+
+class FolderUploader(BaseUploader):
     def __init__(self, destination):
+        super(FolderUploader, self).__init__()
         self.destination = destination
         if not os.path.exists(self.destination):
             os.mkdir(self.destination)
 
-    def upload(self, photo):
+    def _upload(self, photo):
         with open(os.path.join(self.destination, photo.file_name), "w") as dst:
             with photo.open_file() as src:
                 shutil.copyfileobj(src, dst)
 
 
-class FlickrUploader(object):
+class FlickrUploader(BaseUploader):
     def __init__(self, set_name):
+        super(FlickrUploader, self).__init__()
         key = u"26a60d41603c1949a189f898f67d3247"
         secret = u"3de835ffcefadd36"
         self.api = flickrapi.FlickrAPI(key, secret)
@@ -59,7 +70,7 @@ class FlickrUploader(object):
             logger.debug("Adding photo to set")
             return self.api.photosets_addPhoto(photoset_id=self.set_id, photo_id=photo_id)
 
-    def upload(self, photo):
+    def _upload(self, photo):
         logger.info("Uploading to Flickr: %s", photo)
         rsp = self.api.upload(photo._cached_file, title=photo.file_name)
         logger.info("Uploading to Flickr done: %s", photo)
@@ -82,8 +93,9 @@ class FlickrUploader(object):
         return int(rsp.find('photoid').text)
 
 
-class GPlusUploader(object):
+class GPlusUploader(BaseUploader):
     def __init__(self, set_name):
+        super(GPlusUploader, self).__init__()
         self.api = GPhoto()
         albums = self.api.get_albums()
         if set_name not in albums:
@@ -93,7 +105,7 @@ class GPlusUploader(object):
         self.album = albums[set_name]
         logger.info("Using album with id (%s)", self.album["id"])
 
-    def upload(self, photo):
+    def _upload(self, photo):
         logger.info("Uploading to G+: %s", photo)
         self.api.upload(photo._cached_file, photo.file_name, self.album["id"])
         logger.info("Uploading to G+ done: %s", photo)

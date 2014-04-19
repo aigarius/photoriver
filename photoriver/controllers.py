@@ -8,6 +8,7 @@ class BasicController(object):
         self.uploaders = uploaders
 
         self._processed = {}
+        self.futures = []
 
     def process_all(self):
         photos = self.receiver.get_list()
@@ -20,5 +21,5 @@ class BasicController(object):
                         photo = afilter.filter(photo)
                 for uploader in self.uploaders:
                     if photo.enabled:
-                        uploader.upload(photo)
+                        self.futures.append(uploader.upload(photo))
                 self._processed[file_name] = photo
