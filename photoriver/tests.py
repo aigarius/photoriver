@@ -398,7 +398,8 @@ class GPhotoTest(TestCase):
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")
         photo_obj.open_file.return_value = photo_file
 
-        uploader.upload(photo_obj)
+        f = uploader.upload(photo_obj)
+        f.result()
 
         api_obj.upload.assert_called_once_with(".cache/IMG_123.JPG", "IMG_123.JPG", "23456")
 
