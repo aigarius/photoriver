@@ -28,7 +28,7 @@ setup(name="photoriver",
           "Development Status :: 4 - Beta",
           "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
       ],
-      install_requires=["mock", "nose", "requests", "HTTPretty"],
+      install_requires=["mock", "nose", "requests", "HTTPretty", "futures"],
       dependency_links=[
           "http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi",
           "https://aigarius-gdata.googlecode.com/archive/tip.zip#egg=gdata",
