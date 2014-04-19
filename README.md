@@ -23,7 +23,7 @@ When I am in Travel mode, I want to delay photo uploading until I am back at the
 Implementation tagets (in priority order):
  * Python based, Live Event mode moving the images between two folders; :white_check_mark:
  * FlashAir receiver; :white_check_mark:
- * Google+ album uploader;
+ * Google+ album uploader; :white_check_mark:
  * Best-in-burst selection filter;
  * GPS Tagging filter with a hard-coded location;
  * Date fixing filter with a hard-coded offset;
