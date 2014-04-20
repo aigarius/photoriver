@@ -4,6 +4,7 @@ import flickrapi
 import shutil
 import os.path
 import six
+import json
 
 from io import open
 from concurrent.futures import ThreadPoolExecutor
@@ -41,22 +42,52 @@ class FlickrUploader(BaseUploader):
         super(FlickrUploader, self).__init__()
         key = u"26a60d41603c1949a189f898f67d3247"
         secret = u"3de835ffcefadd36"
-        self.api = flickrapi.FlickrAPI(key, secret)
+
+        if self._read_cache_token():
+            self.api = flickrapi.FlickrAPI(key, secret, token=self.access_token, store_token=False)
+        else:
+            self.api = flickrapi.FlickrAPI(key, secret, store_token=False)
+
         if not self.api.token_valid(perms=u'write'):
             # Get a request token
             self.api.get_request_token(oauth_callback='oob')
 
             authorize_url = self.api.auth_url(perms=u'write')
-            print("Open this URL to authorize: ", authorize_url)
 
             # Get the verifier code from the user.
-            verifier = unicode(six.moves.input('Verifier code: '))
+            verifier = unicode(six.moves.input('URL: {0}\nVerifier code: '.format(authorize_url)))
 
             # Trade the request token for an access token
             self.api.get_access_token(verifier)
+        self.access_token = self.api.token_cache.token
+        self._write_cache_token()
 
         self.set_name = set_name
         self.set_id = None
+
+    def _read_cache_token(self):
+        if not os.path.exists("token.cache"):
+            return False
+        cache = {}
+        with open("token.cache", "rb") as f:
+            try:
+                cache = json.load(f)
+            except:
+                pass
+        self.access_token = cache.get("flickr_access_token", None)
+        return True
+
+    def _write_cache_token(self):
+        cache = {}
+        if os.path.exists("token.cache"):
+            with open("token.cache", "rb") as f:
+                try:
+                    cache = json.load(f)
+                except:
+                    pass
+        cache["flickr_access_token"] = self.access_token
+        with open("token.cache", "wb") as f:
+            f.write(json.dumps(cache).encode("utf8"))
 
     def _add_to_set(self, photo_id):
         if not self.set_id:

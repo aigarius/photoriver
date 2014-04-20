@@ -237,6 +237,7 @@ class UploaderTest(TestCase):
 
 class MockFlickrAPI(Mock):
     _called = {}
+    token_cache = Mock(token=u"cached_token_123")
 
     def token_valid(self, perms):  # TODO - test auth code too
         return True
@@ -298,6 +299,7 @@ class FlickrUploaderTest(TestCase):
 
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
+        remove("token.cache")
 
     def test_upload(self):
         photo_obj = Mock(file_name="IMG_123.JPG", _cached_file=".cache/IMG_123.JPG")
@@ -330,6 +332,7 @@ class GPhotoApiTest(TestCase):
 
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
+        remove("token.cache")
         httpretty.disable()  # disable afterwards, so that you will have no problems in code that uses that socket module
         httpretty.reset()    # reset HTTPretty state (clean up registered urls and request history)
 
@@ -347,6 +350,11 @@ class GPhotoApiTest(TestCase):
             api = GPhoto()
 
         self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
+        with open("token.cache", "r") as f:
+            self.assertIn(token_data["refresh_token"], f.read())
+
+        api = GPhoto()
+        self.assertEqual(httpretty.last_request().parsed_body["refresh_token"][0], token_data["refresh_token"])
 
         httpretty.register_uri(httpretty.GET, "https://picasaweb.google.com/data/feed/api/user/default", body=gphoto_albums_xml)
         httpretty.register_uri(httpretty.GET,

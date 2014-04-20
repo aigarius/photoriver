@@ -1,5 +1,7 @@
 import requests
 import six
+import os.path
+import json
 
 from xml.etree import ElementTree
 
@@ -24,10 +26,12 @@ album_post = """
 
 
 class GPhoto(object):
-    def __init__(self, token=None):
-        if token:
-            self.token = token
-        else:
+    def __init__(self):
+        self.token = None
+        self.refresh_token = None
+
+        if not self._refresh_token():
+            # If we don't have a cached token - get an authorization
             url = "{}?client_id={}&redirect_uri={}&scope={}&response_type=code".format(auth_url, client_id, redirect_uri, url_base)
             code = six.moves.input("URL: {0}\nPaste authorization code: ".format(url))
             token_json = requests.post(
@@ -41,9 +45,51 @@ class GPhoto(object):
                 },
             ).json()
             self.token = token_json["access_token"]
+            self.refresh_token = token_json["refresh_token"]
+            self._write_refresh_token()
         self.headers = {
             "Authorization": "Bearer {}".format(self.token)
         }
+
+    def _refresh_token(self):
+        self._read_refresh_token()
+        if not self.refresh_token:
+            return False
+        token_json = requests.post(
+            token_uri,
+            data={
+                "refresh_token": self.refresh_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "grant_type": "refresh_token",
+            },
+        ).json()
+        self.token = token_json["access_token"]
+        return True
+
+    def _read_refresh_token(self):
+        if not os.path.exists("token.cache"):
+            return False
+        cache = {}
+        with open("token.cache", "r") as f:
+            try:
+                cache = json.load(f)
+            except:
+                pass
+        self.refresh_token = cache.get("gphoto_refresh_token", None)
+        return True
+
+    def _write_refresh_token(self):
+        cache = {}
+        if os.path.exists("token.cache"):
+            with open("token.cache", "r") as f:
+                try:
+                    cache = json.load(f)
+                except:
+                    pass
+        cache["gphoto_refresh_token"] = self.refresh_token
+        with open("token.cache", "w") as f:
+            json.dump(cache, f)
 
     def get_albums(self):
         album_feed = requests.get(url_albums, headers=self.headers).text.encode("utf8")
