@@ -43,10 +43,9 @@ class FlickrUploader(BaseUploader):
         key = u"26a60d41603c1949a189f898f67d3247"
         secret = u"3de835ffcefadd36"
 
+        self.api = flickrapi.FlickrAPI(key, secret, store_token=False)
         if self._read_cache_token():
-            self.api = flickrapi.FlickrAPI(key, secret, token=self.access_token, store_token=False)
-        else:
-            self.api = flickrapi.FlickrAPI(key, secret, store_token=False)
+            self.api.token_cache.token = self.access_token
 
         if not self.api.token_valid(perms=u'write'):
             # Get a request token
