@@ -237,10 +237,17 @@ class UploaderTest(TestCase):
 
 class MockFlickrAPI(Mock):
     _called = {}
-    token_cache = Mock(token=u"cached_token_123")
+    token_cache = Mock(token=Mock(
+        token=u"cached_token_123",
+        token_secret=u"secret",
+        access_level=u"write",
+        fullname=u"Full Name",
+        username=u"username",
+        user_nsid=u"N934Ussefjs",
+    ))
 
     def token_valid(self, perms):
-        return self.token_cache.token == u"cached_token_234"
+        return self.token_cache.token.token == u"cached_token_234"
 
     def get_request_token(self, oauth_callback):
         return u"request_token"
@@ -249,7 +256,7 @@ class MockFlickrAPI(Mock):
         return u"http://example.com/auth_url"
 
     def get_access_token(self, verifier):
-        self.token_cache.token = u"cached_token_234"
+        self.token_cache.token.token = u"cached_token_234"
 
     def upload(self, filename, title="123"):
         self._called['upload'] = filename
@@ -333,7 +340,7 @@ class FlickrUploaderTest(TestCase):
 
     def test_caching(self):
         self.uploader = FlickrUploader(set_name="Photoriver Test 123")
-        self.uploader.api.token_cache.token = "bad_token"
+        self.uploader.api.token_cache.token.token = "bad_token"
 
         with patch("six.moves.input") as input_mock:
             input_mock.return_value = b"1234-5678"
