@@ -21,6 +21,7 @@ url_albums = "https://picasaweb.google.com/data/feed/api/user/default"
 album_post = """
 <entry xmlns='http://www.w3.org/2005/Atom' xmlns:media='http://search.yahoo.com/mrss/' xmlns:gphoto='http://schemas.google.com/photos/2007'>
     <title type='text'>{0}</title>
+    <gphoto:access>public</gphoto:access>
     <category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/photos/2007#album'></category>
 </entry>
 """
