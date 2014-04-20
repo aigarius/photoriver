@@ -331,6 +331,15 @@ class FlickrUploaderTest(TestCase):
         self.assertEqual(self.uploader.api._called['addPhoto.photoset_id'], 72157643905570745)
         self.assertEqual(self.uploader.api._called['addPhoto.photo_id'], 13827599313)
 
+    def test_caching(self):
+        self.uploader = FlickrUploader(set_name="Photoriver Test 123")
+        self.uploader.api.token_cache.token = "bad_token"
+
+        with patch("six.moves.input") as input_mock:
+            input_mock.return_value = b"1234-5678"
+            self.uploader = FlickrUploader(set_name="Photoriver Test 123")
+
+
 gphoto_albums_xml = open("photoriver/testdata/galbums.xml", encoding="utf8").read()
 gphoto_photos_xml = open("photoriver/testdata/gphotos.xml", encoding="utf8").read()
 
