@@ -52,8 +52,9 @@ class FolderReceiver(BaseReceiver):
 
 
 class FlashAirReceiver(BaseReceiver):
-    def __init__(self, url, cid=None, timeout=5):
+    def __init__(self, url, folder="/DCIM/102CANON", cid=None, timeout=5):
         super(FlashAirReceiver, self).__init__(source=url)
+        self.folder = folder
         self.cid = cid
         self.timeout = timeout
 
@@ -77,7 +78,7 @@ class FlashAirReceiver(BaseReceiver):
 
     def get_list(self):
         try:
-            r = requests.get(self.source + "command.cgi?op=100&DIR=/DCIM/102CANON", timeout=self.timeout)
+            r = requests.get(self.source + "command.cgi?op=100&DIR=" + self.folder, timeout=self.timeout)
         except:
             return self._files
         if r.status_code == 200:
