@@ -101,7 +101,7 @@ class FlickrUploader(BaseUploader):
         if os.path.exists("token.cache"):
             with open("token.cache", "rb") as f:
                 try:
-                    cache = jsons.load(f.read().decode("utf8"))
+                    cache = jsons.loads(f.read().decode("utf8"))
                 except:
                     pass
         cache["flickr_token"] = self.access_token.token
