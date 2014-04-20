@@ -55,7 +55,7 @@ class FlickrUploader(BaseUploader):
             authorize_url = self.api.auth_url(perms=u'write')
 
             # Get the verifier code from the user.
-            verifier = unicode(six.moves.input('URL: {0}\nVerifier code: '.format(authorize_url)))
+            verifier = six.moves.input('URL: {0}\nVerifier code: '.format(authorize_url))
 
             # Trade the request token for an access token
             self.api.get_access_token(verifier)

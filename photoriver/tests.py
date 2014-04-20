@@ -239,8 +239,17 @@ class MockFlickrAPI(Mock):
     _called = {}
     token_cache = Mock(token=u"cached_token_123")
 
-    def token_valid(self, perms):  # TODO - test auth code too
-        return True
+    def token_valid(self, perms):
+        return self.token_cache.token == u"cached_token_234"
+
+    def get_request_token(self, oauth_callback):
+        return u"request_token"
+
+    def auth_url(self, perms):
+        return u"http://example.com/auth_url"
+
+    def get_access_token(self, verifier):
+        self.token_cache.token = u"cached_token_234"
 
     def upload(self, filename, title="123"):
         self._called['upload'] = filename
@@ -380,6 +389,25 @@ class GPhotoApiTest(TestCase):
             f.write(u"DUMMY JPEG FILE HEADER")
         self.assertTrue(api.upload("IMG_123.JPG", "IMG_321", albums["Tampere high and dry"]["id"]))
         remove("IMG_123.JPG")
+
+    def test_gphoto_exceptions(self):
+
+        token_data = {
+            "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
+            "expires_in": 3920,
+            "token_type": "Bearer",
+            "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
+        }
+        httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(token_data))
+
+        with open("token.cache", "wb") as f:
+            f.write(b"BAD JSON")
+
+        with patch("six.moves.input") as input_mock:
+            input_mock.return_value = b"1234-5678"
+
+            api = GPhoto()
+        self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
 
 
 class GPhotoTest(TestCase):
