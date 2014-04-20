@@ -64,6 +64,18 @@ class FlickrUploader(BaseUploader):
 
         self.set_name = set_name
         self.set_id = None
+        self.uploaded_photos = {}
+        rsp = self.api.photosets_getList()
+        self.set_id = self._find_set(rsp, self.set_name)
+        if self.set_id:
+            self.uploaded_photos = self._get_photos_from_set(self.set_id)
+
+    def _get_photos_from_set(self, set_id):
+        walker = self.api.walk_set(set_id)
+        uploaded_photos = {}
+        for photo in walker:
+            uploaded_photos[photo.get("title")] = {'id': photo.get('id')}
+        return uploaded_photos
 
     def _read_cache_token(self):
         if not os.path.exists("token.cache"):
@@ -71,43 +83,54 @@ class FlickrUploader(BaseUploader):
         cache = {}
         with open("token.cache", "rb") as f:
             try:
-                cache = json.load(f)
+                cache = json.loads(f.read().decode("utf8"))
             except:
                 pass
-        self.access_token = cache.get("flickr_access_token", None)
-        return True
+        if "flickr_token" in cache:
+            self.access_token = flickrapi.auth.FlickrAccessToken(
+                token=cache.get("flickr_token", None),
+                token_secret=cache.get("flickr_token_secret", None),
+                access_level=cache.get("flickr_access_level", None),
+                fullname=cache.get("flickr_fullname", None),
+                username=cache.get("flickr_username", None),
+                user_nsid=cache.get("flickr_user_nsid", None),
+            )
+            return True
 
     def _write_cache_token(self):
         cache = {}
         if os.path.exists("token.cache"):
             with open("token.cache", "rb") as f:
                 try:
-                    cache = json.load(f)
+                    cache = jsons.load(f.read().decode("utf8"))
                 except:
                     pass
-        cache["flickr_access_token"] = self.access_token
+        cache["flickr_token"] = self.access_token.token
+        cache["flickr_token_secret"] = self.access_token.token_secret
+        cache["flickr_access_level"] = self.access_token.access_level
+        cache["flickr_fullname"] = self.access_token.fullname
+        cache["flickr_username"] = self.access_token.username
+        cache["flickr_user_nsid"] = self.access_token.user_nsid
         with open("token.cache", "wb") as f:
             f.write(json.dumps(cache).encode("utf8"))
 
-    def _add_to_set(self, photo_id):
-        if not self.set_id:
-            rsp = self.api.photosets_getList()
-            self.set_id = self._find_set(rsp, self.set_name)
-        if not self.set_id:
-            logger.debug("Creating a new set")
-            rsp = self.api.photosets_create(title=self.set_name, primary_photo_id=photo_id)
-            self.set_id = self._get_set_id_from_rsp(rsp)
-        else:
-            logger.debug("Adding photo to set")
-            return self.api.photosets_addPhoto(photoset_id=self.set_id, photo_id=photo_id)
-
     def _upload(self, photo):
-        logger.info("Uploading to Flickr: %s", photo)
-        rsp = self.api.upload(photo._cached_file, title=photo.file_name)
-        logger.info("Uploading to Flickr done: %s", photo)
-        photo_id = self._get_photo_id_from_rsp(rsp)
-        photo.upload_id = photo_id
-        self._add_to_set(photo_id)
+        if self.set_id and photo.file_name in self.uploaded_photos:
+            logger.info("Already uploaded to Flickr, skipping: %s", photo)
+        else:
+            logger.info("Uploading to Flickr: %s", photo)
+            rsp = self.api.upload(photo._cached_file, title=photo.file_name)
+            logger.info("Uploading to Flickr done: %s", photo)
+            photo_id = self._get_photo_id_from_rsp(rsp)
+            photo.upload_id = photo_id
+            if not self.set_id:
+                logger.debug("Creating a new set")
+                rsp = self.api.photosets_create(title=self.set_name, primary_photo_id=photo_id)
+                self.set_id = self._get_set_id_from_rsp(rsp)
+            else:
+                logger.debug("Adding photo to set")
+                self.api.photosets_addPhoto(photoset_id=self.set_id, photo_id=photo_id)
+            self.uploaded_photos[photo.file_name] = photo
 
     def _find_set(self, rsp, set_name):
         set_id = None
@@ -134,9 +157,14 @@ class GPlusUploader(BaseUploader):
             self.api.create_album(set_name)
             albums = self.api.get_albums()
         self.album = albums[set_name]
-        logger.info("Using album with id (%s)", self.album["id"])
+        self.uploaded_photos = self.api.get_photos(self.album["id"])
+        logger.info("Using album with id (%s) - %s photos found", self.album["id"], len(self.uploaded_photos.keys()))
 
     def _upload(self, photo):
-        logger.info("Uploading to G+: %s", photo)
-        self.api.upload(photo._cached_file, photo.file_name, self.album["id"])
-        logger.info("Uploading to G+ done: %s", photo)
+        if photo.file_name in self.uploaded_photos:
+            logger.info("Already uploaded to G+, skipping: %s", photo)
+        else:
+            logger.info("Uploading to G+: %s", photo)
+            self.api.upload(photo._cached_file, photo.file_name, self.album["id"])
+            self.uploaded_photos[photo.file_name] = photo
+            logger.info("Uploading to G+ done: %s", photo)

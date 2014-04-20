@@ -4,6 +4,7 @@ import os.path
 import json
 
 from xml.etree import ElementTree
+from io import open
 
 import logging
 logger = logging.getLogger(__name__)
@@ -71,9 +72,9 @@ class GPhoto(object):
         if not os.path.exists("token.cache"):
             return False
         cache = {}
-        with open("token.cache", "r") as f:
+        with open("token.cache", "rb") as f:
             try:
-                cache = json.load(f)
+                cache = json.loads(f.read().decode("utf8"))
             except:
                 pass
         self.refresh_token = cache.get("gphoto_refresh_token", None)
@@ -82,14 +83,14 @@ class GPhoto(object):
     def _write_refresh_token(self):
         cache = {}
         if os.path.exists("token.cache"):
-            with open("token.cache", "r") as f:
+            with open("token.cache", "rb") as f:
                 try:
-                    cache = json.load(f)
+                    cache = json.loads(f.read().decode("utf8"))
                 except:
                     pass
         cache["gphoto_refresh_token"] = self.refresh_token
-        with open("token.cache", "w") as f:
-            json.dump(cache, f)
+        with open("token.cache", "wb") as f:
+            f.write(json.dumps(cache).encode("utf8"))
 
     def get_albums(self):
         album_feed = requests.get(url_albums, headers=self.headers).text.encode("utf8")

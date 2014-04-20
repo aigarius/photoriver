@@ -78,8 +78,9 @@ class FlashAirReceiver(BaseReceiver):
     def get_list(self):
         try:
             r = requests.get(self.source + "command.cgi?op=100&DIR=/DCIM/102CANON", timeout=self.timeout)
-            if r.status_code != 200:
-                return self._files
+        except:
+            return self._files
+        if r.status_code == 200:
             lines = r.text.split("\n")
             if lines[0].strip() != "WLANSD_FILELIST":
                 return self._files
@@ -102,12 +103,9 @@ class FlashAirReceiver(BaseReceiver):
                 )
                 files[filename] = Photo(filename, dirname=dirname, size=size, timestamp=timestamp)
 
-            if files != self._files:
+            if set(files.keys()) != set(self._files.keys()):
                 logger.info("New photos found on FlashAir: %s", set(files.keys())-set(self._files.keys()))
-
-            self._files = files
-        except:
-            pass
+                self._files = files
         return self._files
 
     def download_file(self, name):

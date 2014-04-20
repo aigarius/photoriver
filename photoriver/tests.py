@@ -347,6 +347,16 @@ gphoto_photos_xml = open("photoriver/testdata/gphotos.xml", encoding="utf8").rea
 class GPhotoApiTest(TestCase):
     def setUp(self):
         httpretty.enable()
+        self.token_data = {
+            "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
+            "expires_in": 3920,
+            "token_type": "Bearer",
+            "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
+        }
+        httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(self.token_data))
+        with patch("six.moves.input") as input_mock:
+            input_mock.return_value = b"1234-5678"
+            self.api = GPhoto()
 
     def tearDown(self):
         rmtree(".cache", ignore_errors=True)
@@ -355,24 +365,13 @@ class GPhotoApiTest(TestCase):
         httpretty.reset()    # reset HTTPretty state (clean up registered urls and request history)
 
     def test_gphoto_api(self):
-        token_data = {
-            "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
-            "expires_in": 3920,
-            "token_type": "Bearer",
-            "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
-        }
-        httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(token_data))
-        with patch("six.moves.input") as input_mock:
-            input_mock.return_value = b"1234-5678"
-
-            api = GPhoto()
 
         self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
         with open("token.cache", "r") as f:
-            self.assertIn(token_data["refresh_token"], f.read())
+            self.assertIn(self.token_data["refresh_token"], f.read())
 
-        api = GPhoto()
-        self.assertEqual(httpretty.last_request().parsed_body["refresh_token"][0], token_data["refresh_token"])
+        self.api = GPhoto()
+        self.assertEqual(httpretty.last_request().parsed_body["refresh_token"][0], self.token_data["refresh_token"])
 
         httpretty.register_uri(httpretty.GET, "https://picasaweb.google.com/data/feed/api/user/default", body=gphoto_albums_xml)
         httpretty.register_uri(httpretty.GET,
@@ -380,10 +379,10 @@ class GPhotoApiTest(TestCase):
                                body=gphoto_photos_xml
                                )
 
-        albums = api.get_albums()
+        albums = self.api.get_albums()
         self.assertIn("Tampere high and dry", albums.keys())
 
-        photos = api.get_photos(albums["Tampere high and dry"]["id"])
+        photos = self.api.get_photos(albums["Tampere high and dry"]["id"])
         self.assertEqual(len(photos), 18)
         self.assertIn("20110815_174429_100-6804.jpg", photos.keys())
 
@@ -392,22 +391,14 @@ class GPhotoApiTest(TestCase):
                                "https://picasaweb.google.com/data/feed/api/user/default/albumid/5992553397538619153",
                                status=201)
 
-        self.assertTrue(api.create_album("Test 123"))
+        self.assertTrue(self.api.create_album("Test 123"))
 
         with open("IMG_123.JPG", "w") as f:
             f.write(u"DUMMY JPEG FILE HEADER")
-        self.assertTrue(api.upload("IMG_123.JPG", "IMG_321", albums["Tampere high and dry"]["id"]))
+        self.assertTrue(self.api.upload("IMG_123.JPG", "IMG_321", albums["Tampere high and dry"]["id"]))
         remove("IMG_123.JPG")
 
     def test_gphoto_exceptions(self):
-
-        token_data = {
-            "access_token": "1/fFAGRNJru1FTz70BzhT3Zg",
-            "expires_in": 3920,
-            "token_type": "Bearer",
-            "refresh_token": "1/xEoDL4iW3cxlI7yDbSRFYNG01kVKM2C-259HOF2aQbI"
-        }
-        httpretty.register_uri(httpretty.POST, "https://accounts.google.com/o/oauth2/token", body=json.dumps(token_data))
 
         with open("token.cache", "wb") as f:
             f.write(b"BAD JSON")
@@ -415,14 +406,15 @@ class GPhotoApiTest(TestCase):
         with patch("six.moves.input") as input_mock:
             input_mock.return_value = b"1234-5678"
 
-            api = GPhoto()
+            self.api = GPhoto()
         self.assertEqual(httpretty.last_request().parsed_body["code"][0], "1234-5678")
 
 
 class GPhotoTest(TestCase):
     def test_gphoto(self):
         api_obj = Mock()
-        api_obj.get_albums.side_effect = [{}, {"Test 123": {"id": "23456"}}, {"Test 123": {"id": "23456"}}]
+        api_obj.get_albums.side_effect = [{}, {"Test 123": {"id": "23456"}}, {"Test 123": {"id": "23456"}}, {"Test 123": {"id": "23456"}}]
+        api_obj.get_photos.return_value = {}
         api_obj.create_album.return_value = True
         with patch("photoriver.uploaders.GPhoto") as api_mock:
             api_mock.return_value = api_obj
@@ -438,6 +430,21 @@ class GPhotoTest(TestCase):
                 uploader = GPlusUploader("Test 123")
                 api_obj.create_album.assert_called_once_with("Test 123")
                 self.assertEqual(api_obj.get_albums.call_count, 3)
+
+                # With existing photos
+                api_obj.get_photos.return_value = {"IMG_122.JPG": {"id": 122}}
+                uploader = GPlusUploader("Test 123")
+                api_obj.create_album.assert_called_once_with("Test 123")
+                self.assertEqual(api_obj.get_albums.call_count, 4)
+
+        photo_obj = Mock(file_name="IMG_122.JPG", _cached_file=".cache/IMG_122.JPG")
+        photo_file = StringIO(u"JPEG DUMMY TEST DATA")
+        photo_obj.open_file.return_value = photo_file
+
+        f = uploader.upload(photo_obj)
+        f.result()
+
+        self.assertFalse(api_obj.upload.called)
 
         photo_obj = Mock(file_name="IMG_123.JPG", _cached_file=".cache/IMG_123.JPG")
         photo_file = StringIO(u"JPEG DUMMY TEST DATA")

@@ -1,6 +1,9 @@
 #!python
 
+import os.path
+
 from io import open
+
 
 class Photo(object):
     def __init__(self, file_name, dirname=".", size=None, timestamp=None):
@@ -12,6 +15,11 @@ class Photo(object):
         self._cached_file = None
         self._downloaded = False
         self.enabled = True
+
+        cache_name = os.path.join(".cache", file_name)
+        if os.path.exists(cache_name) and os.path.getsize(cache_name) == int(size):
+            self._downloaded = True
+            self._cached_file = cache_name
 
     def __repr__(self):
         return "Photo({}/{})".format(self.dirname, self.file_name)
