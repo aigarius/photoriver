@@ -10,16 +10,16 @@ package.name = photoriver
 package.domain = com.aigarius
 
 # (str) Source code where the main.py live
-source.dir = ./photoriver
+source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,kv,atlas,cache
 
 # (list) Source files to exclude (let empty to not exclude anything)
 #source.exclude_exts = spec
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-#source.exclude_dirs = tests, bin
+source.exclude_dirs = env
 
 # (list) List of exclusions using pattern matching
 #source.exclude_patterns = license,images/*/*.jpg
@@ -32,7 +32,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 0.0.1
 
 # (list) Application requirements
-requirements = kivy
+requirements = kivy, requests, futures, urllib3, sqlite3, openssl, http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
 
 # (list) Garden requirements
 #garden_requirements =
