@@ -39,3 +39,27 @@ Non-functional requirements:
  * fault tolerance;
  * detailed logging;
  * restartability;
+
+ Development commands
+ ====================
+
+ Create a development environment:
+
+ virtualenv env
+ env/bin/pip install -r requirements.txt
+
+ Run unit tests:
+
+ env/bin/nosetest
+
+ Run unit tests with both Python2 and Python3:
+
+ bash do_test.sh
+
+ Run a test live photo session from FlashAir on 192.168.10.144 to both Flickr and G+ albums "Test 345":
+
+ env/bin/python do_run.py
+
+ Create, deploy and run an Android package (autostarting main.py):
+
+ env/bin/buildozer android debug deploy run
