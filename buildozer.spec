@@ -32,7 +32,7 @@ source.exclude_dirs = env
 version = 0.0.1
 
 # (list) Application requirements
-requirements = kivy, requests, futures, urllib3, sqlite3, openssl, http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
+requirements = kivy,requests,futures,urllib3,sqlite3,openssl,http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
 
 # (list) Garden requirements
 #garden_requirements =
@@ -55,7 +55,7 @@ fullscreen = 1
 #
 
 # (list) Permissions
-android.permissions = INTERNET
+android.permissions = INTERNET,WAKE_LOCK,ACCESS_FINE_LOCATION,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,VIBRATE
 
 # (int) Android API to use
 android.api = 14
@@ -113,7 +113,7 @@ android.api = 14
 
 # (bool) Indicate whether the screen should stay on
 # Don't forget to add the WAKE_LOCK permission if you set this to True
-#android.wakelock = False
+# android.wakelock = False
 
 # (list) Android application meta-data to set (key=value format)
 #android.meta_data =

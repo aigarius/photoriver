@@ -1,39 +1,27 @@
 import kivy
-kivy.require('1.0.6')  # replace with your current kivy version !
+kivy.require('1.0.6')
 
 from kivy.app import App
-from kivy.uix.label import Label
-import logging
-
-import requests
-from photoriver import models
+from android import AndroidService
 
 
-from photoriver.receivers import FlashAirReceiver
-from photoriver.controllers import BasicController
-from photoriver.uploaders import FlickrUploader, GPlusUploader
+class PhotoRiverApp(App):
+    def on_start(self):
+        self.service = AndroidService()
 
-logging.info("Starting test")
+    def start_service(self):
+        self.service.start()
 
-print(1)
-receiver = FlashAirReceiver("http://192.168.10.144/")
-print(2)
-uploader1 = FlickrUploader("Test 345")
-print(3)
-uploader2 = GPlusUploader("Test 345")
-print(4)
-controller = BasicController(receiver=receiver, uploaders=[uploader1, uploader2])
-print(5)
-controller.process_all()
-controller.process_all()
-controller.process_all()
+    def stop_service(self):
+        self.service.stop()
+
+    def on_pause(self):
+        return True
+
+    def on_resume(self):
+        return True
 
 
-class MyApp(App):
-
-    def build(self):
-        return Label(text="Starting up")
-
-
+app = PhotoRiverApp()
 if __name__ == '__main__':
-    MyApp().run()
+    app.run()

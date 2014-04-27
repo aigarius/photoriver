@@ -1,0 +1,15 @@
+
+#:kivy 1.0
+
+BoxLayout:
+    orientation: 'vertical'
+    padding: 20
+    spacing: 10
+
+    Button:
+        text: 'Start service'
+        on_press: app.start_service()
+
+    Button:
+        text: 'Stop service'
+        on_press: app.stop_service()
