@@ -30,36 +30,46 @@ Implementation tagets (in priority order):
  * Flick uploader; :white_check_mark:
  * Chooser command to change choise of best-in-burst;
  * ...
- * Android port
+ * Android port :white_check_mark:
 
 Non-functional requirements:
  * 100% test coverage; :white_check_mark:
  * test-driven development; :white_check_mark:
- * parallel processing;
+ * parallel processing; :white_check_mark:
  * fault tolerance;
- * detailed logging;
- * restartability;
+ * detailed logging; :white_check_mark:
+ * restartability; :white_check_mark:
 
- Development commands
- ====================
+Development commands
+====================
 
- Create a development environment:
+Create a development environment:
 
- virtualenv env
- env/bin/pip install -r requirements.txt
+```
+virtualenv env
+env/bin/pip install -r requirements.txt
+```
 
- Run unit tests:
+Run unit tests:
 
- env/bin/nosetest
+```
+env/bin/nosetest
+```
 
- Run unit tests with both Python2 and Python3:
+Run unit tests with both Python2 and Python3:
 
- bash do_test.sh
+```
+bash do_test.sh
+```
 
- Run a test live photo session from FlashAir on 192.168.10.144 to both Flickr and G+ albums "Test 345":
+Run a test live photo session from FlashAir on 192.168.10.144 to both Flickr and G+ albums "Test 345":
 
- env/bin/python do_run.py
+```
+env/bin/python do_run.py
+```
 
- Create, deploy and run an Android package (autostarting main.py):
+Create, deploy and run an Android package (autostarting main.py):
 
- env/bin/buildozer android debug deploy run
+```
+env/bin/buildozer android debug deploy run
+```
