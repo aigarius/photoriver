@@ -6,6 +6,18 @@ BoxLayout:
     padding: 20
     spacing: 10
 
+    TextInput:
+        text: "http://192.168.10.144/"
+        hint_text: "FlashAir URI"
+        multiline: False
+        on_text: app.flash_air = self.text
+
+    TextInput:
+        text: ""
+        hint_text: "Album name"
+        multiline: False
+        on_text: app.album_name = self.text
+
     Button:
         text: 'Start service'
         on_press: app.start_service()
