@@ -77,6 +77,13 @@ class FlashAirReceiver(BaseReceiver):
             return False
 
     def get_list(self):
+        r = None
+        try:
+            r = requests.get(self.source + "command.cgi?op=102", timeout=self.timeout)
+        except:
+            pass
+        if not r or r.status_code != 200 or r.text[0] == "0":
+            return self._files
         try:
             r = requests.get(self.source + "command.cgi?op=100&DIR=" + self.folder, timeout=self.timeout)
         except:

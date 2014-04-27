@@ -90,6 +90,10 @@ class FlashAirReceiverTest(TestCase):
     def callback(self, method, uri, headers):
         if uri == "http://192.168.34.72/command.cgi?op=120":
             return (200, headers, "02544d535730384708c00b78700d201")
+
+        if uri == "http://192.168.34.72/command.cgi?op=102":
+            return (200, headers, "1")
+
         if uri == "http://192.168.34.72/command.cgi?op=100&DIR=/DCIM/102CANON":
             lines = ["WLANSD_FILELIST"]
             lines += [",".join(("/DCIM", x, str(y['size']), str(32), str(y['adate']), str(y['atime']))) for x, y in self.files.items()]
