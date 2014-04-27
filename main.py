@@ -8,6 +8,7 @@ from android import AndroidService
 
 class PhotoRiverApp(App):
     flashair_uri = "http://192.168.10.144/"
+    folder = "/DCIM/102CANON"
     album_name = ""
 
     def on_start(self):
@@ -16,6 +17,7 @@ class PhotoRiverApp(App):
     def start_service(self):
         service_args = dict(
             flashair_uri=self.flashair_uri,
+            folder=self.folder,
             album_name=self.album_name,
         )
         self.service.start(json.dumps(service_args))

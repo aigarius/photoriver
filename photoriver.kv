@@ -13,6 +13,12 @@ BoxLayout:
         on_text: app.flash_air = self.text
 
     TextInput:
+        text: "/DCIM/102CANON"
+        hint_text: "FlashAir folder"
+        multiline: False
+        on_text: app.folder = self.text
+
+    TextInput:
         text: ""
         hint_text: "Album name"
         multiline: False
