@@ -82,7 +82,8 @@ class FlashAirReceiver(BaseReceiver):
             r = requests.get(self.source + "command.cgi?op=102", timeout=self.timeout)
         except:
             pass
-        if not r or r.status_code != 200 or r.text[0] == "0":
+        if self._files and (not r or r.status_code != 200 or r.text[0] == "0"):
+            # We have gotten some data in the past and the card is either unavailable or reports that "nothing has changed"
             return self._files
         try:
             r = requests.get(self.source + "command.cgi?op=100&DIR=" + self.folder, timeout=self.timeout)

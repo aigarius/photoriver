@@ -32,7 +32,7 @@ source.exclude_dirs = env
 version = 0.0.1
 
 # (list) Application requirements
-requirements = kivy,requests,futures,urllib3,sqlite3,openssl,http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
+requirements = kivy,plyer,requests,futures,urllib3,sqlite3,openssl,pexif,http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
 
 # (list) Garden requirements
 #garden_requirements =

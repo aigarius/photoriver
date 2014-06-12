@@ -7,7 +7,7 @@ from android import AndroidService
 
 
 class PhotoRiverApp(App):
-    flashair_uri = "http://192.168.10.144/"
+    flashair_uri = "http://192.168.1.101/"
     folder = "/DCIM/102CANON"
     album_name = ""
 

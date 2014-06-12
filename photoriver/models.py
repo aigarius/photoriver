@@ -1,5 +1,6 @@
 #!python
 
+import os
 import os.path
 
 from io import open
@@ -23,6 +24,10 @@ class Photo(object):
 
     def __repr__(self):
         return "Photo({}/{})".format(self.dirname, self.file_name)
+
+    def clean(self):
+        if self._downloaded:
+            os.remove(self._cached_file)
 
     def open_file(self):
         if self._downloaded:

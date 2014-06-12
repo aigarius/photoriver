@@ -6,3 +6,5 @@ HTTPretty
 http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
 futures
 buildozer
+plyer
+pexif
