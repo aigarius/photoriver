@@ -14,6 +14,7 @@ from photoriver.gplusapi import GPhoto
 import logging
 
 logger = logging.getLogger(__name__)
+token_cache = "token.cache"
 
 
 class BaseUploader(object):
@@ -77,10 +78,10 @@ class FlickrUploader(BaseUploader):
         return uploaded_photos
 
     def _read_cache_token(self):
-        if not os.path.exists("token.cache"):
+        if not os.path.exists(token_cache):
             return False
         cache = {}
-        with open("token.cache", "rb") as f:
+        with open(token_cache, "rb") as f:
             try:
                 cache = json.loads(f.read().decode("utf8"))
             except:
@@ -98,8 +99,8 @@ class FlickrUploader(BaseUploader):
 
     def _write_cache_token(self):
         cache = {}
-        if os.path.exists("token.cache"):
-            with open("token.cache", "rb") as f:
+        if os.path.exists(token_cache):
+            with open(token_cache, "rb") as f:
                 try:
                     cache = json.loads(f.read().decode("utf8"))
                 except:
@@ -110,7 +111,7 @@ class FlickrUploader(BaseUploader):
         cache["flickr_fullname"] = self.access_token.fullname
         cache["flickr_username"] = self.access_token.username
         cache["flickr_user_nsid"] = self.access_token.user_nsid
-        with open("token.cache", "wb") as f:
+        with open(token_cache, "wb") as f:
             f.write(json.dumps(cache).encode("utf8"))
 
     def _upload(self, photo):
