@@ -24,12 +24,9 @@ class GPSTagFilter(object):
         self.gps.start()
 
     def on_location(self, *args, **kwargs):
-        logger.info("******* GPS Location *** %s *** %s *********", str(args), str(kwargs))
-        notification.notify("GSP lat:{0}, lon:{1}".format(kwargs['lat'], kwargs['lon']))
         self.gpshistory[datetime.now().replace(microsecond=0)] = kwargs
 
     def on_status(self, *args, **kwargs):
-        logger.info("******* GPS Status *** %s *** %s *********", str(args), str(kwargs))
         self.status_history[datetime.now().replace(microsecond=0)] = kwargs
 
     def select_location(self, adate):
@@ -52,21 +49,17 @@ class GPSTagFilter(object):
         full_interval = (late - early).seconds
         adate_interval = (adate - early).seconds
 
-        if adate_interval <= 0.9 * full_interval:
+        if adate_interval <= 0.9 * full_interval:  # 90% of the interval between valid GPS locations is mapped to the earlier location
             return self.gpshistory[early]
         else:
             return self.gpshistory[late]
 
-
     def filter(self, photo):
-        logger.info("GPS HISTORY: " + str(self.gpshistory))
-        logger.info("STATUS HISTORY: " + str(self.status_history))
         exif = pexif.JpegFile.fromFile(photo._cached_file)
         primary = exif.get_exif().get_primary()
-        logger.info("Primary DateTime : %s", primary.DateTime)
-        logger.info("Extended DateTimeOriginal : %s", primary.ExtendedEXIF.DateTimeOriginal)
 
         agps = self.select_location(datetime.strptime(primary.DateTime, "%Y:%m:%d %H:%M:%S"))
+        logger.debug("GPS Location for %s set to: %s, %s", photo.file_name, lat, lon)
         if agps:
             exif.set_geo(agps['lat'], agps['lon'])
             exif.writeFile(photo._cached_file)
