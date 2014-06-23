@@ -28,7 +28,8 @@ album_post = """
 
 
 class GPhoto(object):
-    def __init__(self):
+    def __init__(self, token_cache):
+        self.token_cache = token_cache
         self.token = None
         self.refresh_token = None
 
@@ -70,10 +71,10 @@ class GPhoto(object):
         return True
 
     def _read_refresh_token(self):
-        if not os.path.exists("token.cache"):
+        if not os.path.exists(self.token_cache):
             return False
         cache = {}
-        with open("token.cache", "rb") as f:
+        with open(self.token_cache, "rb") as f:
             try:
                 cache = json.loads(f.read().decode("utf8"))
             except:
@@ -83,14 +84,14 @@ class GPhoto(object):
 
     def _write_refresh_token(self):
         cache = {}
-        if os.path.exists("token.cache"):
-            with open("token.cache", "rb") as f:
+        if os.path.exists(self.token_cache):
+            with open(self.token_cache, "rb") as f:
                 try:
                     cache = json.loads(f.read().decode("utf8"))
                 except:
                     pass
         cache["gphoto_refresh_token"] = self.refresh_token
-        with open("token.cache", "wb") as f:
+        with open(self.token_cache, "wb") as f:
             f.write(json.dumps(cache).encode("utf8"))
 
     def get_albums(self):

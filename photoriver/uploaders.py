@@ -150,7 +150,7 @@ class FlickrUploader(BaseUploader):
 class GPlusUploader(BaseUploader):
     def __init__(self, set_name):
         super(GPlusUploader, self).__init__()
-        self.api = GPhoto()
+        self.api = GPhoto(token_cache)
         albums = self.api.get_albums()
         if set_name not in albums:
             logger.info("Creating an album")
