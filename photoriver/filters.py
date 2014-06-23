@@ -10,6 +10,22 @@ from plyer import gps, notification
 logger = logging.getLogger(__name__)
 
 
+class GPSHardTagFilter(object):
+    def __init__(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
+
+    def start(self):
+        pass
+
+    def filter(self, photo):
+        exif = pexif.JpegFile.fromFile(photo._cached_file)
+        primary = exif.get_exif().get_primary()
+        exif.set_geo(self.lat, self.lon)
+        exif.writeFile(photo._cached_file)
+        return photo
+
+
 class GPSTagFilter(object):
     def __init__(self):
         self.gpshistory = {}
