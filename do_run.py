@@ -10,9 +10,9 @@ from photoriver.uploaders import FlickrUploader, GPlusUploader
 
 logging.info("Starting test")
 
-receiver = FlashAirReceiver("http://192.168.10.144/")
-uploader1 = FlickrUploader("Test 345")
-uploader2 = GPlusUploader("Test 345")
+receiver = FlashAirReceiver("http://192.168.1.100/")
+uploader1 = FlickrUploader("Test 123")
+uploader2 = GPlusUploader("Test 123")
 controller = BasicController(receiver=receiver, uploaders=[uploader1, uploader2])
 while(True):
     controller.process_all()
