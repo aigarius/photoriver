@@ -32,7 +32,7 @@ class GPSTagFilter(object):
         logger.info("******* GPS Status *** %s *** %s *********", str(args), str(kwargs))
         self.status_history[datetime.now()] = kwargs
 
-    def select_location(adate):
+    def select_location(self, adate):
         return self.gpshistory.values()[-1]
 
     def filter(self, photo):

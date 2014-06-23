@@ -17,6 +17,7 @@ from datetime import datetime
 from xml.etree import ElementTree
 
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
+from photoriver.filters import GPSTagFilter
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader, FlickrUploader, GPlusUploader
 from photoriver.gplusapi import GPhoto
@@ -220,7 +221,7 @@ class ControllerTest(TestCase):
 class GPSTagFilterTest(TestCase):
     def setUp(self):
         self.filter = GPSTagFilter()
-        self.gpshistory = {
+        self.filter.gpshistory = {
             datetime(2014, 05, 01, 14, 00, 00): {'lat': 50.0, 'lon': 24.0, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
             datetime(2014, 05, 01, 14, 01, 00): {'lat': 50.1, 'lon': 24.1, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
             datetime(2014, 05, 01, 14, 02, 00): {'lat': 50.2, 'lon': 24.1, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
@@ -234,21 +235,23 @@ class GPSTagFilterTest(TestCase):
             datetime(2014, 05, 02, 14, 02, 00): {'lat': 50.3, 'lon': -22.3, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
         }
 
-    def test_location_selection(self):
-        # No data
+    def test_location_selection_no_data(self):
         self.assertIsNone(self.filter.select_location(datetime(2013, 01, 01, 01, 01, 01)))
-        # Exact match
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 02, 00), {'lat': 50.2, 'lon': 24.1})
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 02, 01), {'lat': 50.3, 'lon': 23.0})
-        # Early match (90% of the time between time points goes to the previous point)
-        self.assertDictContainsSubset(datetime(2014, 05, 03, 14, 02, 00), {'lat': 50.3, 'lon': -22.3})
-        self.assertDictContainsSubset(datetime(2014, 05, 03, 14, 04, 01), {'lat': 50.0, 'lon': -22.0})
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 03, 01), {'lat': 50.4, 'lon': 23.1})
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 03, 31), {'lat': 50.4, 'lon': 23.1})
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 03, 50), {'lat': 50.4, 'lon': 23.1})
-        # Late match (last 10% of the time between points goes to the next point)
-        self.assertDictContainsSubset(datetime(2014, 05, 01, 14, 03, 56), {'lat': 50.0, 'lon': -22.0})
-        self.assertDictContainsSubset(datetime(2014, 05, 02, 13, 03, 56), {'lat': 50.5, 'lon': -22.9})
+
+    def test_location_selection_exact_match(self):
+        self.assertDictContainsSubset({'lat': 50.2, 'lon': 24.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 02, 00)))
+        self.assertDictContainsSubset({'lat': 50.3, 'lon': 23.0}, self.filter.select_location(datetime(2014, 05, 01, 14, 02, 01)))
+
+    def test_location_selection_early_data(self):
+        self.assertDictContainsSubset({'lat': 50.3, 'lon': -22.3}, self.filter.select_location(datetime(2014, 05, 03, 14, 02, 00)))
+        self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 05, 03, 14, 04, 01)))
+        self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 01)))
+        self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 31)))
+        self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 50)))
+
+    def test_location_selection_late_data(self):
+        self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 56)))
+        self.assertDictContainsSubset({'lat': 50.5, 'lon': -22.9}, self.filter.select_location(datetime(2014, 05, 02, 13, 03, 56)))
 
 
 class UploaderTest(TestCase):
