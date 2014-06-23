@@ -3,7 +3,7 @@ nose
 requests
 mock
 HTTPretty
-http://bitbucket.org/sybren/flickrapi/get/tip.zip#egg=flickrapi
+https://bitbucket.org/sybren/flickrapi/get/9d209fd.zip#egg=flickrapi
 futures
 buildozer
 plyer
