@@ -48,6 +48,7 @@ class FolderReceiver(BaseReceiver):
         )
         photo._downloaded = True
         photo._cached_file = os.path.join(self._cache_dir, name)
+        photo.size = os.path.getsize(photo._cached_file)
         return photo
 
 
@@ -128,5 +129,6 @@ class FlashAirReceiver(BaseReceiver):
                 fd.write(chunk)
         photo._downloaded = True
         photo._cached_file = os.path.join(self._cache_dir, name)
+        photo.size = os.path.getsize(photo._cached_file)
         logging.info("Done downloading: %s", name)
         return photo

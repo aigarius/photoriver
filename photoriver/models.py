@@ -28,6 +28,7 @@ class Photo(object):
     def clean(self):
         if self._downloaded:
             os.remove(self._cached_file)
+            self._downloaded = False
 
     def open_file(self):
         if self._downloaded:

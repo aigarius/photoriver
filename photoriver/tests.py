@@ -21,6 +21,7 @@ from photoriver.filters import GPSHardTagFilter, GPSTagFilter
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader, FlickrUploader, GPlusUploader
 from photoriver.gplusapi import GPhoto
+from photoriver.models import Photo
 
 logging.basicConfig(level=logging.CRITICAL)
 
@@ -54,6 +55,10 @@ class ReceiverTest(TestCase):
         self.assertEqual(list(self.receiver.get_list().keys()), ['IMG_123.JPG'])
         cached_file = self.receiver.download_file('IMG_123.JPG')
         self.assertEqual(repr(cached_file), "Photo(./IMG_123.JPG)")
+
+        photo2 = Photo(cached_file.file_name, size=cached_file.size)
+        self.assertTrue(photo2._downloaded)
+
         with cached_file.open_file() as f:
             data = f.read()
 
@@ -63,6 +68,14 @@ class ReceiverTest(TestCase):
             data = f.read()
 
         self.assertEqual(data, u"DUMMY JPEG FILE HEADER")
+
+        cached_file.clean()
+        cached_file.clean()
+        self.assertFalse(cached_file._downloaded)
+        self.assertFalse(os.path.exists(photo2._cached_file))
+
+        photo2 = Photo(cached_file.file_name, size=cached_file.size)
+        self.assertFalse(photo2._downloaded)
 
     def test_add_file_offline(self):
         with open("test_folder/IMG_123.JPG", "w") as f:
