@@ -7,6 +7,9 @@ class BasicController(object):
         self.filters = filters
         self.uploaders = uploaders
 
+        for filter in self.filters:
+            filter.start()
+
         self._processed = {}
         self.futures = []
 
