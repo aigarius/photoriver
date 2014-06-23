@@ -11,13 +11,13 @@ import six
 from os import mkdir, rename, remove
 from shutil import rmtree
 from unittest import TestCase
-from mock import Mock, patch
+from mock import Mock, patch, call
 from io import StringIO, open
 from datetime import datetime
 from xml.etree import ElementTree
 
 from photoriver.receivers import FolderReceiver, FlashAirReceiver
-from photoriver.filters import GPSTagFilter
+from photoriver.filters import GPSHardTagFilter, GPSTagFilter
 from photoriver.controllers import BasicController
 from photoriver.uploaders import FolderUploader, FlickrUploader, GPlusUploader
 from photoriver.gplusapi import GPhoto
@@ -218,6 +218,24 @@ class ControllerTest(TestCase):
         self.uploader.upload.assert_called_once_with(mock4)
 
 
+class GPSHardTagFilterTest(TestCase):
+    def setUp(self):
+        self.filter = GPSHardTagFilter(50.3, 23.0)
+
+    def test_filter(self):
+        with patch("photoriver.filters.pexif") as pexif:
+            exif = pexif.JpegFile.fromFile()
+            photo = Mock(file_name="IMG_001.JPG")
+
+            self.filter.start()
+            photo2 = self.filter.filter(photo)
+
+            self.assertEqual(photo, photo2)
+            self.assertListEqual(pexif.JpegFile.fromFile.call_args_list, [call(), call(photo._cached_file)])
+            exif.set_geo.assert_called_once_with(50.3, 23.0)
+            exif.writeFile.assert_called_once_with(photo._cached_file)
+
+
 class GPSTagFilterTest(TestCase):
     def setUp(self):
         self.filter = GPSTagFilter()
@@ -256,6 +274,44 @@ class GPSTagFilterTest(TestCase):
     def test_location_selection_late_data(self):
         self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 5, 1, 14, 3, 56)))
         self.assertDictContainsSubset({'lat': 50.1, 'lon': -22.1}, self.filter.select_location(datetime(2014, 5, 2, 13, 3, 56)))
+
+    def test_startup(self):
+        self.filter.gps = Mock()
+        self.filter.start()
+        self.filter.gps.configure.called
+        self.filter.gps.start.assert_called_once_with()
+
+    def test_callbacks(self):
+        self.filter.on_location(lat=50.5, lon=23.1, altitude=30.0, bearing=15.0, speed=5.0)
+        self.assertDictEqual(
+            self.filter.gpshistory[max(self.filter.gpshistory.keys())],
+            {'lat': 50.5, 'lon': 23.1, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
+        )
+        self.filter.gpshistory = {}
+        self.filter.on_location(lat=50.4, lon=23.1, altitude=30.0, bearing=15.0, speed=5.0)
+        self.assertDictEqual(
+            self.filter.gpshistory[max(self.filter.gpshistory.keys())],
+            {'lat': 50.4, 'lon': 23.1, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
+        )
+        self.filter.on_status(status="available")
+        self.assertDictEqual(
+            self.filter.status_history[max(self.filter.status_history.keys())],
+            {'status': "available"},
+        )
+
+    def test_filter(self):
+        with patch("photoriver.filters.pexif") as pexif:
+            exif = pexif.JpegFile.fromFile()
+            exif.get_exif().get_primary().DateTime = "2014:05:01 14:02:01"
+            photo = Mock(file_name="IMG_001.JPG")
+
+            photo2 = self.filter.filter(photo)
+
+            self.assertEqual(photo, photo2)
+            self.assertListEqual(pexif.JpegFile.fromFile.call_args_list, [call(), call(photo._cached_file)])
+            exif.set_geo.assert_called_once_with(50.3, 23.0)
+            exif.writeFile.assert_called_once_with(photo._cached_file)
+
 
 
 class UploaderTest(TestCase):

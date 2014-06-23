@@ -30,9 +30,9 @@ class GPSTagFilter(object):
     def __init__(self):
         self.gpshistory = {}
         self.status_history = {}
+        self.gps = gps
 
     def start(self):
-        self.gps = gps
         self.gps.configure(
             on_location=self.on_location,
             on_status=self.on_status,
