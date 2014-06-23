@@ -7,5 +7,5 @@ https://bitbucket.org/sybren/flickrapi/get/9d209fd.zip#egg=flickrapi
 futures
 buildozer
 plyer
-pexif
+git+http://github.com/aigarius/pexif.git#egg=pexif
 six
