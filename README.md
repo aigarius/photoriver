@@ -26,7 +26,7 @@ Implementation tagets (in priority order):
  * Google+ album uploader; :white_check_mark:
  * Best-in-burst selection filter;
  * GPS Tagging filter with a hard-coded location; :white_check_mark:
- * GPS Tagging filter with a real location;
+ * GPS Tagging filter with a real location; :white_check_mark:
  * Date fixing filter with a hard-coded offset;
  * Flick uploader; :white_check_mark:
  * Chooser command to change choise of best-in-burst;

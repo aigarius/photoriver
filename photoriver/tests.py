@@ -235,6 +235,10 @@ class GPSTagFilterTest(TestCase):
             datetime(2014, 05, 02, 14, 02, 00): {'lat': 50.3, 'lon': -22.3, 'altitude': 30.0, 'bearing': 15.0, 'speed': 5.0},
         }
 
+    def test_location_selection_no_history(self):
+        self.filter.gpshistory = {}
+        self.assertIsNone(self.filter.select_location(datetime(2014, 05, 01, 14, 04, 00)))
+
     def test_location_selection_no_data(self):
         self.assertIsNone(self.filter.select_location(datetime(2013, 01, 01, 01, 01, 01)))
 
@@ -244,14 +248,14 @@ class GPSTagFilterTest(TestCase):
 
     def test_location_selection_early_data(self):
         self.assertDictContainsSubset({'lat': 50.3, 'lon': -22.3}, self.filter.select_location(datetime(2014, 05, 03, 14, 02, 00)))
-        self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 05, 03, 14, 04, 01)))
+        self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 05, 01, 14, 04, 01)))
         self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 01)))
         self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 31)))
         self.assertDictContainsSubset({'lat': 50.4, 'lon': 23.1}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 50)))
 
     def test_location_selection_late_data(self):
         self.assertDictContainsSubset({'lat': 50.0, 'lon': -22.0}, self.filter.select_location(datetime(2014, 05, 01, 14, 03, 56)))
-        self.assertDictContainsSubset({'lat': 50.5, 'lon': -22.9}, self.filter.select_location(datetime(2014, 05, 02, 13, 03, 56)))
+        self.assertDictContainsSubset({'lat': 50.1, 'lon': -22.1}, self.filter.select_location(datetime(2014, 05, 02, 13, 03, 56)))
 
 
 class UploaderTest(TestCase):
