@@ -25,7 +25,8 @@ Implementation tagets (in priority order):
  * FlashAir receiver; :white_check_mark:
  * Google+ album uploader; :white_check_mark:
  * Best-in-burst selection filter;
- * GPS Tagging filter with a hard-coded location;
+ * GPS Tagging filter with a hard-coded location; :white_check_mark:
+ * GPS Tagging filter with a real location;
  * Date fixing filter with a hard-coded offset;
  * Flick uploader; :white_check_mark:
  * Chooser command to change choise of best-in-burst;
