@@ -15,6 +15,14 @@ from photoriver.uploaders import FlickrUploader, GPlusUploader
 from photoriver.filters import GPSTagFilter
 
 logging.info("Starting PhotoRiver Service")
+
+storage_dir = os.path.join(os.getenv("EXTERNAL_STORAGE", "."), "photoriver")
+try:
+    os.makedirs(storage_dir)
+except:
+    pass
+os.chdir(storage_dir)
+
 service_args = json.loads(os.getenv("PYTHON_SERVICE_ARGUMENT", ""))
 if not service_args:
     logging.info("Did not get args, using defaults")

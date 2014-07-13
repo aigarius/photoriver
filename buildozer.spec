@@ -58,7 +58,7 @@ fullscreen = 1
 android.permissions = INTERNET,WAKE_LOCK,ACCESS_FINE_LOCATION,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,VIBRATE
 
 # (int) Android API to use
-android.api = 14
+android.api = 18
 
 [buildozer]
 
