@@ -75,8 +75,8 @@ class GPSTagFilter(object):
         primary = exif.get_exif().get_primary()
 
         agps = self.select_location(datetime.strptime(primary.DateTime, "%Y:%m:%d %H:%M:%S"))
-        logger.debug("GPS Location for %s set to: %s, %s", photo.file_name, agps['lat'], agps['lon'])
         if agps:
+            logger.debug("GPS Location for %s set to: %s, %s", photo.file_name, agps['lat'], agps['lon'])
             exif.set_geo(agps['lat'], agps['lon'])
             exif.writeFile(photo._cached_file)
 
