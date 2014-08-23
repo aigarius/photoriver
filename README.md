@@ -72,5 +72,6 @@ env/bin/python do_run.py
 Create, deploy and run an Android package (autostarting main.py):
 
 ```
+sudo apt-get install cython default-jdk
 env/bin/buildozer android debug deploy run
 ```
